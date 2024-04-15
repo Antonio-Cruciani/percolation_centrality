@@ -1,4 +1,13 @@
 
+struct static_graph
+    adjacency::Array{Int64,Array{Int64}}
+    incidency::Array{Int64,Array{Int64}}
+    function static_graph(n::Int64)
+        return new(Array{Int64,Array{Int64}}(undef,n),Array{Int64,Array{Int64}}(undef,n))
+    end
+end
+
+
 function load_graph(file_name::String,directed::Boolean = true,sep::String = " ")
     @assert isfile(file_name) "The edge list file " * file_name * " does not exist"
     start_time = time()
