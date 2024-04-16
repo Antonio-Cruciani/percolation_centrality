@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64})
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64},num_paths::Array{Int64})
 
     end_q::UInt32 = 1
     tot_weight::UInt64 = 0
@@ -45,6 +45,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     num_path_to_sample::Int64 = 1
     num_paths::Int64 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
+    path::Array{Int64} = Array{Int64}([])
     while (s == z)
         z = sample(1:n)
     end
@@ -138,11 +139,11 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
 
     if (length(sp_edges) == 0)
         for u in 1:end_q
-            ball[u] = @unvisited
-            dist[u] = 0
-            pred[u] = Array{Int64}([])
+            ball[q[u]] = @unvisited
+            dist[q[u]] = 0
+            pred[q[u]] = Array{Int64}([])
             # Check this npaths and q, they should be set back to 0 once finished
-            n_paths[u] = 0
+            n_paths[q[u]] = 0
             q[u] = 0
         end
     end
@@ -154,34 +155,60 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     end
     num_paths = num_path_to_sample
 
-    for _ in 1:num_path_to_sample
-        random_edge = rand(0::tot_weight-1)
+    for j in 1:num_path_to_sample
+        path = Array{Int64}([])
+
+        random_edge = rand(0:tot_weight-1)
         cur_edge = 0
 
         for p in sp_edges
             cur_edge += n_paths[p[1]] * n_paths[p[2]]
             if (cur_edge > random_edge)
-                # add betweenness values
-                _backtrack_path!(s,z,p[1])
-                _backtrack_path!(s,z,p[2])
+                _backtrack_path!(s,z,p[1],path)
+                _backtrack_path!(s,z,p[2],path)
                 break
             end
+        end
+        if (j == 1)
+            path_length = length(path)
+        end
+        for u in path
+            betweenness[u] +=1
         end
     end
 
     for u in 1:end_q
-        ball[u] = @unvisited
-        dist[u] = 0
-        pred[u] = Array{Int64}([])
+        ball[q[u]] = @unvisited
+        dist[q[u]] = 0
+        pred[q[u]] = Array{Int64}([])
         # Check this npaths and q, they should be set back to 0 once finished
-        n_paths[u] = 0
+        n_paths[q[u]] = 0
         q[u] = 0
     end
     return nothing
 end
+# We need to add all the betweenness update part in the bidirectional bfs
 
+function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64})
+    #wip
+    tot_weight::UInt64 = n_paths[w]
+    random_pred::Int64 = 0
+    cur_pred::Int64 = 0
+    v::Int64 = 0
+    if (w == s || w == z)
+        return nothing
+    end
+    random_pred = rand(0:tot_weight-1)
+    for p in pred[w]
+        v = p
+        cur_pred += n_paths[z]
+        if (cur_pred > random_pred)
+            push!(path, v)
+            break
+        end
+    end
+    if (s != w && z != w)
+        _backtrack_path!(s,z,v,path)
+    end
 
-function _backtrack_path!(s::Int64,z::Int64,w::Int64)
-    #wip    
-    return nothing
 end
