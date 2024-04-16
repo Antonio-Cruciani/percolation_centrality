@@ -42,6 +42,8 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     neigh_num::UInt64 = 0
     to_expand::Int16 = 0
     vis_edges::Int64 = 0
+    num_path_to_sample::Int64 = 1
+    num_paths::Int64 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
     while (s == z)
         z = sample(1:n)
@@ -122,6 +124,49 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         if (sum_degs_cur == 0)
             have_to_stop = true
         end
+        if (to_expand == @adjacency)
+            sum_degs_s = sum_degs_cur
+            start_s = start_cur
+            end_s = new_end_cur
+        else
+            sum_degs_z = sum_degs_cur
+            start_z = start_cur
+            end_z = new_end_cur
+        end
+        end_cur = new_end_cur
+    end
+
+    if (length(sp_edges) == 0)
+        for u in 1:end_q
+            ball[u] = @unvisited
+            dist[u] = 0
+            pred[u] = Array{Int64}([])
+            # Check this npaths and q, they should be set back to 0 once finished
+            n_paths[u] = 0
+            q[u] = 0
+        end
+    end
+    for p in sp_edges
+        tot_weight += n_paths[p[1]] * n_paths[p[2]]
+    end
+    if (alpha_sampling > 0 && tot_weight > 1)
+        num_path_to_sample = trunc(Int64,floor(alpha_sampling * tot_weight))
+    end
+    num_paths = num_path_to_sample
+
+    for _ in 1:num_path_to_sample
+        random_edge = rand(0::tot_weight-1)
+        cur_edge = 0
+
+        for p in sp_edges
+            cur_edge += n_paths[p[1]] * n_paths[p[2]]
+            if (cur_edge > random_edge)
+                # add betweenness values
+                _backtrack_path!(s,z,p[1])
+                _backtrack_path!(s,z,p[2])
+                break
+            end
+        end
     end
 
     for u in 1:end_q
@@ -132,5 +177,11 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         n_paths[u] = 0
         q[u] = 0
     end
+    return nothing
+end
+
+
+function _backtrack_path!(s::Int64,z::Int64,w::Int64)
+    #wip    
     return nothing
 end
