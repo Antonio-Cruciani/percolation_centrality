@@ -11,9 +11,15 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     # If sample size set to 0, compute the exact diameter
     if sample_size == 0
         sample_size = n
+        println("Computing Exact Diameter")
+        flush(stdout)
     end
-    for _ in 1:sample_size
-        s = sample(1:n)
+    for i in 1:sample_size
+        if sample_size == n
+            s = i
+        else
+            s = sample(1:n)
+        end
         enqueue!(q,s)
         dist[s] = 0
         ball[s] = 1
@@ -25,6 +31,8 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
                     if dist[v] > diam_lb
                         diam_lb = dist[v]
                     end
+                    ball[v] = 1
+                    enqueue!(q,v)
                 end
             end
         end

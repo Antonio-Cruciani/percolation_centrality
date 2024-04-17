@@ -22,6 +22,7 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     emp_wimpy_node::Float64 = 0.0
     min_inv_wimpy_node::Float64 = 0.0
     max_perc::Float64 = 0.0
+    max_bc::Float64 = 0.0
     max_wv::Float64 = 0.0
     # Partitions 
     number_of_non_empty_partitions::Int64 = 0
@@ -42,15 +43,24 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     max_num_samples::Float64 = 0.0
     tau::Int64 = trunc(Int64,max(1. / epsilon * (log(1. / delta)) , 100.))
     tau =  trunc(Int64,max(tau,2*(diam -1) * (log(1. / delta))) )
+    start_time_bootstrap::Float64 = time()
     println("Bootstrap phase "*string(tau)*" iterations")
     flush(stdout)
+    new_diam_estimate::Array{Int64} = [diam]
     for _ in 1:tau
-        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling,betweenness,true)
+        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling,betweenness,new_diam_estimate,true)
     end
     println("Empirical peeling phase:")
     flush(stdout)
+    if diam < new_diam_estimate[1]
+        println("Diameter estimation refined from "*string(diam)*" to "*string(new_diam_estimate[1]))
+        diam = new_diam_estimate[1]
+        flush(stdout)
+    end
     for i in 1:n
-        max_perc = max(max_perc,percolation_centrality[i])
+        #max_perc = max(max_perc,percolation_centrality[i])
+        max_bc = max(max_bc,betweenness[i])
+
         max_wv = max(max_wv,wimpy_variance[i])
         emp_w_node = wimpy_variance[i] * 1. /tau
         min_inv_w_node = min(1. /emp_w_node,tau)
@@ -68,6 +78,51 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
         part_idx+=1
         number_of_non_empty_partitions+=1
     end
+    avg_diam_ub::Float64 = upper_bound_average_diameter(delta/8,diam,shortest_path_length,tau,true)
+    top1bc_upper_bound::Float64 = upper_bound_top_1_bc(max_bc,delta/8,tau)
+    wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(max_wv/tau,delta/8,tau)
+    println("Average shortest path length (upper bound) "*string(avg_diam_ub))
+    flush(stdout)
+    max_num_samples = upper_bound_samples(top1bc_upper_bound,wimpy_var_upper_bound,avg_diam_ub,epsilon,delta/2 ,false)
+    omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
+    println("Maximum number of samples "*string(max_num_samples)*" VC Bound "*string(omega))
+    println("Sup bc estimation "*string(max_bc))
+    println("Sup empirical wimpy variance "*string(max_wv/tau))
+    flush(stdout)
+    omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
+    if max_num_samples > 0
+        omega = max_num_samples
+    end
+    max_num_samples = omega
+    first_stopping_samples::Float64 = 0.0
+    eps_guess::Float64 = 1.0
+    first_sample_lower::Float64 = 1/epsilon *log(2/delta)
+    first_sample_upper::Float64 = omega
+    sup_emp_wimpy_var_norm::Float64  = max_wv/tau +1/tau
+    finish_bootstrap = string(round(time() - start_time_bootstrap; digits=4))
+    println("Bootstrap completed in "*finish_bootstrap)
+    println("Inferring initial sample size for the geometric sampler")
+    flush(stdout)
+    num_samples::Float64 = 0.0
+    while first_sample_upper - first_sample_lower> 10
+        num_samples = (first_sample_upper+first_sample_lower)÷2
+        eps_guess = sqrt(2*sup_emp_wimpy_var_norm*log(2/delta) /num_samples) + log(2/delta)/num_samples/3
+        if eps_guess > epsilon
+            first_sample_lower = num_samples
+        else
+            first_sample_upper = num_samples
+        end
+    end
+    first_stopping_samples = num_samples
+    last_stopping_samples = omega
+    println("Maximum number of iterations "*string(last_stopping_samples))
+    println("Initial sample size "*string(first_stopping_samples))
+    if first_stopping_samples >= last_stopping_samples/4
+        first_stopping_samples = last_stopping_samples/4
+        println("Initial sample size dropped to "*string(first_stopping_samples))
+    end
+    flush(stdout)
+
     # To do the rest
     #WIP
 
@@ -89,12 +144,12 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     
     return (betweenness)
     =#
-
+    println(betweenness)
     println("---------------")
     println(percolation_centrality)
-    println(wimpy_variance)
-    println("-------------------------")
-    println(shortest_path_length)
-    println(percolated_path_length)
+    #println(wimpy_variance)
+    #println("-------------------------")
+    # println(shortest_path_length)
+    #println(percolated_path_length)
 
 end

@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,betweenness::Array{Float64},boostrap_phase::Bool = false)
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,betweenness::Array{Float64},new_diam_estimate::Array{Int64},boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
@@ -194,6 +194,9 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             if (j == 1)
                 path_length = length(path)
                 shortest_path_length[path_length+1] +=1
+                if path_length+2 > new_diam_estimate[1]
+                    new_diam_estimate[1] = path_length
+                end
             end
             for u in path
                 if haskey(path_map,u)
@@ -229,11 +232,15 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         percolation_centrality[u] += percolation_value
         betweenness[u] += pm_value/num_path_to_sample
         # check whether the denominator must be squared too
-        wimpy_variance[u] += percolation_value*percolation_value 
+        #wimpy_variance[u] += percolation_value*percolation_value 
+        wimpy_variance[u] += pm_value*pm_value/num_path_to_sample/num_path_to_sample
+
         # Updating c-Monte Carlo Empirical Rademacher (Only during the estimation phase)
         if !boostrap_phase
             for j in 1:mc_trials
-                mcrade[(u*mc_trials) + j] += lambdas[j] * percolation_value
+                #mcrade[(u*mc_trials) + j] += lambdas[j] * percolation_value
+                mcrade[(u*mc_trials) + j] += lambdas[j] * pm_value/num_path_to_sample
+
             end
         end
         # Normalizing the percolated_path_length
