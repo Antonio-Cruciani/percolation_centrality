@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64},num_paths::Array{Int64})
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64},num_paths::Array{Int64},percolation_cepercolation_centralityntrality::Array{Float64},wimpy_varaince::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}})
 
     end_q::UInt32 = 1
     tot_weight::UInt64 = 0
@@ -46,6 +46,8 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     num_paths::Int64 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
     path::Array{Int64} = Array{Int64}([])
+    path_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
+    pm_value::Int64 = 0
     while (s == z)
         z = sample(1:n)
     end
@@ -173,7 +175,11 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             path_length = length(path)
         end
         for u in path
-            betweenness[u] +=1
+            if haskey(path_map,u)
+                path_map[u] +=1
+            else
+                path_map[u] = 1
+            end
         end
     end
 
@@ -185,6 +191,16 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         n_paths[q[u]] = 0
         q[u] = 0
     end
+    # Updating Percolation and wimpy variance
+    for u in keys(path_map)
+        pm_value =  path_map[u]
+        percolation_centrality[u] += pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        # check whether the denominator must be squared too
+        wimpy_varaince[u] += (pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]))^2 /num_path_to_sample
+    end
+    # Updating c-Monte Carlo Rademacher (todo)
+
+    # Updating average percolated path length (todo)
     return nothing
 end
 # We need to add all the betweenness update part in the bidirectional bfs
