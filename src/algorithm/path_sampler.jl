@@ -17,21 +17,20 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,boostrap_phase::Bool = false)
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,betweenness::Array{Float64},boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
-    tot_weight::UInt64 = 0
+    tot_weight::Int64 = 0
     cur_edge::UInt64 = 0
     random_edge::UInt32 = 0;
-    s::UInt64 = sample(1:n)
-    z::UInt64 = sample(1:n)
-    #ball::Array{Int16} = zeros(Int32,n)
-    x::UInt32  = 0
-    y::UInt32 = 0
+    s::Int64 = sample(1:n)
+    z::Int64 = sample(1:n)
+    x::Int64  = 0
+    y::Int64 = 0
     longest_dist::Int64 = 0
     have_to_stop::Bool = false;
-    start_s::UInt64 = 1
-    start_z::UInt64 = 2
+    start_s::Int64 = 1
+    start_z::Int64 = 2
     end_s::UInt64 = 2
     end_z::UInt64 = 3
     start_cur::UInt64 = 0
@@ -65,7 +64,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     end_q = 2
     q[1] = s
     q[2] = z
-    println("q ",q)
+    #println("q ",q)
     ball[s] = @visited_s
     ball[z] = @visited_z
 
@@ -73,7 +72,6 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     n_paths[z] = 1
     dist[s] = 0
     dist[z] = 0
-    println("S ",s," Z ",z)
     while (!have_to_stop)
         
         # decide what ball we have to expand
@@ -84,8 +82,9 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             new_end_cur = end_s
             end_s = end_q
             sum_degs_s = 0
+            sum_degs_cur = sum_degs_s 
             to_expand = @adjacency
-            println("SUM DEG S ",sum_degs_s)
+            #println("SUM DEG S ",sum_degs_s)
         else
             start_cur = start_z
             end_cur = end_z
@@ -93,22 +92,21 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             new_end_cur = end_z
             end_z = end_q
             sum_degs_z = 0
+            sum_degs_cur = sum_degs_z
             to_expand = @incidency
-            println("SUM DEG Z ",sum_degs_z)
-
+            #println("SUM DEG Z ",sum_degs_z)
         end
-
         while (start_cur < end_cur)
-            println("START CUR ",start_cur," END CUR ",end_cur)
+           # println("START CUR ",start_cur," END CUR ",end_cur)
             # to test
             x = q[start_cur]
             start_cur += 1
             if (to_expand == @adjacency)
                 neigh_num = lastindex(sg.adjacency[x])
-                println("Expanding forward from ",x)
+                #println("Expanding forward from ",x)
             else
                 neigh_num = lastindex(sg.incidency[x])
-                println("Expanding backward from ",x)
+                #println("Expanding backward from ",x)
             end
             for j in 1:neigh_num
                 #println("now ",q)
@@ -135,7 +133,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
                 elseif (ball[y] != ball[x])
                     have_to_stop = true
                     push!(sp_edges,(x,y))
-                    println("The bfs met at ",(x,y))
+                    #println("The bfs met at ",(x,y))
 
                 elseif (dist[y] == dist[x] +1)
                     n_paths[y] += n_paths[x]
@@ -159,7 +157,6 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         end
         end_cur = new_end_cur
     end
-    println("s ",s," Z ",z)
     if (length(sp_edges) == 0)
         for u in 1:end_q
             ball[q[u]] = @unvisited
@@ -169,67 +166,68 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             n_paths[q[u]] = 0
             q[u] = 0
         end
-    end
-    for p in sp_edges
-        tot_weight += n_paths[p[1]] * n_paths[p[2]]
-    end
-    if (alpha_sampling > 0 && tot_weight > 1)
-        num_path_to_sample = trunc(Int64,floor(alpha_sampling * tot_weight))
-    end
-    num_paths = num_path_to_sample
-
-    for j in 1:num_path_to_sample
-        path = Array{Int64}([])
-
-        random_edge = rand(0:tot_weight-1)
-        cur_edge = 0
-        #println("PREDS ",pred)
+    else
         for p in sp_edges
-            cur_edge += n_paths[p[1]] * n_paths[p[2]]
-            if (cur_edge > random_edge)
-                #println("randm edge ",p)
-                println("s ",s," z ",z," p ",p)
-                _backtrack_path!(s,z,p[1],path,n_paths,pred)
-                _backtrack_path!(s,z,p[2],path,n_paths,pred)
-                break
-            end
+            tot_weight += n_paths[p[1]] * n_paths[p[2]]
         end
-        println("PATH ",path)
-        if (j == 1)
-            path_length = length(path)
-            shortest_path_length[path_length+1] +=1
+        if (alpha_sampling > 0 && tot_weight > 1)
+            num_path_to_sample = trunc(Int64,floor(alpha_sampling * tot_weight))
         end
-        for u in path
-            if haskey(path_map,u)
-                path_map[u] +=1
-            else
-                path_map[u] = 1
-            end
+        num_paths = num_path_to_sample
 
-            if ball[u] == @visited_s
-                percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
-            else
-                longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
-                percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+        for j in 1:num_path_to_sample
+            path = Array{Int64}([])
+            random_edge = rand(0:tot_weight-1)
+            cur_edge = 0
+            #println("PREDS ",pred)
+            for p in sp_edges
+                cur_edge += n_paths[p[1]] * n_paths[p[2]]
+                if (cur_edge > random_edge)
+                    #println("randm edge ",p)
+                    #println("s ",s," z ",z," p ",p)
+                    _backtrack_path!(s,z,p[1],path,n_paths,pred)
+                    _backtrack_path!(s,z,p[2],path,n_paths,pred)
+                    break
+                end
+            end
+            #println("PATH ",path)
+            if (j == 1)
+                path_length = length(path)
+                shortest_path_length[path_length+1] +=1
+            end
+            for u in path
+                if haskey(path_map,u)
+                    path_map[u] +=1
+                else
+                    path_map[u] = 1
+                end
+
+                if ball[u] == @visited_s
+                    percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                else
+                    longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
+                    percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                end
             end
         end
-    end
 
-    for u in 1:end_q
-        ball[q[u]] = @unvisited
-        dist[q[u]] = 0
-        pred[q[u]] = Array{Int64}([])
-        # Check this npaths and q, they should be set back to 0 once finished
-        n_paths[q[u]] = 0
-        q[u] = 0
+        for u in 1:end_q
+            ball[q[u]] = @unvisited
+            dist[q[u]] = 0
+            pred[q[u]] = Array{Int64}([])
+            # Check this npaths and q, they should be set back to 0 once finished
+            n_paths[q[u]] = 0
+            q[u] = 0
+        end
     end
     # Updating Percolation centrality, wimpy variance and c-MCERA
-    println("PATH MAP ",path_map," PERC STATES ",percolation_states)
+    #println("PATH MAP ",path_map," PERC STATES ",percolation_states)
     for u in keys(path_map)
         pm_value = path_map[u]
-        println("PM VAL ",pm_value, " RAMP ",ramp(percolation_states[s],percolation_states[z])," DENOM ",percolation_data[2][u], " num path sample ",num_path_to_sample)
+        #println("PM VAL ",pm_value, " RAMP ",ramp(percolation_states[s],percolation_states[z])," DENOM ",percolation_data[2][u], " num path sample ",num_path_to_sample)
         percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
         percolation_centrality[u] += percolation_value
+        betweenness[u] += pm_value/num_path_to_sample
         # check whether the denominator must be squared too
         wimpy_variance[u] += percolation_value*percolation_value 
         # Updating c-Monte Carlo Empirical Rademacher (Only during the estimation phase)
@@ -245,7 +243,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     return nothing
 end
 
-function _backtrack_path!(s::UInt64,z::UInt64,w::Int64,path::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}})
+function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}})
     tot_weight::UInt64 = n_paths[w]
     random_pred::Int64 = 0
     cur_pred::Int64 = 0
