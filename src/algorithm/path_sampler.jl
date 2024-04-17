@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64},num_paths::Array{Int64},percolation_cepercolation_centralityntrality::Array{Float64},wimpy_varaince::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}})
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Int64,Array{Int64}},q::Array{Int64},num_paths::Array{Int64},percolation_cepercolation_centralityntrality::Array{Float64},wimpy_varaince::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
     tot_weight::UInt64 = 0
@@ -48,6 +48,15 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     path::Array{Int64} = Array{Int64}([])
     path_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
     pm_value::Int64 = 0
+    percolation_value::Float64 = 0.0
+    lambdas::Array{Int64} = zeros(mc_trials)
+    maxval_lambdas::Int64 = 100000000
+    maxval_half::Int64 = maxval_lambdas/2
+    if !boostrap_phase
+        for j in 1:mc_trials
+            lambdas[j] = (sample(0:maxval_lambdas-1) >= maxval_half)*2-1
+        end
+    end
     while (s == z)
         z = sample(1:n)
     end
@@ -173,6 +182,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         end
         if (j == 1)
             path_length = length(path)
+            shortest_path_length[path_length] +=1
         end
         for u in path
             if haskey(path_map,u)
@@ -191,16 +201,21 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         n_paths[q[u]] = 0
         q[u] = 0
     end
-    # Updating Percolation and wimpy variance
+    # Updating Percolation, wimpy variance and c-MCERA
     for u in keys(path_map)
-        pm_value =  path_map[u]
-        percolation_centrality[u] += pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        pm_value = path_map[u]
+        percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        percolation_centrality[u] += percolation_value
         # check whether the denominator must be squared too
-        wimpy_varaince[u] += (pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]))^2 /num_path_to_sample
+        wimpy_varaince[u] += percolation_value*percolation_value 
+        # Updating c-Monte Carlo Empirical Rademacher (Only during the estimation phase)
+        if !boostrap_phase
+            for j in 1:mc_trials
+                mcrade[(u*mc_trials) + j] += lambdas[j] * percolation_value
+            end
+        end
     end
-    # Updating c-Monte Carlo Rademacher (todo)
 
-    # Updating average percolated path length (todo)
     return nothing
 end
 # We need to add all the betweenness update part in the bidirectional bfs
