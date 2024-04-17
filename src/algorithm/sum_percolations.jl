@@ -3,12 +3,12 @@ function percolation_differences(percolation_states::Array{Float64},n::Int64)::T
     minus_sum::Array{Float64} = zeros(Float64,n)
     svp::Array{Float64} = zeros(Float64,n+1)
     for i in 2:n
-        svp[i] = svp[i-1] + percolations[i-1]
-        summation += (i-1)*percolations[i] - svp[i]
+        svp[i] = svp[i-1] + percolation_states[i-1]
+        summation += (i-1)*percolation_states[i] - svp[i]
     end
-    svp[n+1] = svp[n] + percolations[n]
+    svp[n+1] = svp[n] + percolation_states[n]
     for i in 1:n
-        minus_sum[i] = summation - percolations[i] * (2*i-n-2) - svp[n+1] + 2*svp[i]
+        minus_sum[i] = summation - percolation_states[i] * (2*i-n-2) - svp[n+1] + 2*svp[i]
     end
     return summation,minus_sum
 end

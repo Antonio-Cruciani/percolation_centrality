@@ -1,14 +1,14 @@
 
 struct static_graph
-    adjacency::Array{Int64,Array{Int64}}
-    incidency::Array{Int64,Array{Int64}}
-    function static_graph(n::Int64)
-        return new(Array{Int64,Array{Int64}}(undef,n),Array{Int64,Array{Int64}}(undef,n))
+    adjacency::Array{Array{Int64}}
+    incidency::Array{Array{Int64}}
+    function static_graph(adj::Array{Array{Int64}},idj::Array{Array{Int64}})
+        return new(adj,idj)
     end
 end
 
 
-function load_graph(file_name::String,directed::Boolean = true,sep::String = " ")
+function load_graph(file_name::String,directed::Bool = true,sep::String = " ")
     @assert isfile(file_name) "The edge list file " * file_name * " does not exist"
     start_time = time()
     file_id_to_graph_id::Dict{Int64,Int64} = Dict{Int64,Int64}()
@@ -71,25 +71,25 @@ function print_stats(g; graph_name="anonymous")
     println("====================================================")
     println("Network: " * graph_name)
     println("====================================================")
-    println("Number of nodes " * string(nv(g))))
+    println("Number of nodes " * string(nv(g)))
     println("Number of edges " * string(length(ne(g))))
     println("Is the graph directed? " * string(is_directed(g)))
     println("====================================================")
 end
 
 
-function adjacency_list(g)::Array{Int64,Array{Int64}}
-    adj_list::Array{Int64,Array{Int64}} = Array{Int64,Array{Int64}}([ for _ in 1:nv(g)])
+function adjacency_list(g)::Array{Array{Int64}}
+    adj_list::Array{Array{Int64}} = Array{Array{Int64}}([])
     for u in 1:nv(g)
-        push!(adj_list[u],outneighbors(g,u))
+        push!(adj_list,outneighbors(g,u))
     end
     return adj_list
 end
 
-function incidency_list(g)::Array{Int64,Array{Int64}}
-    in_list::Array{Int64,Array{Int64}} = Array{Int64,Array{Int64}}([ for _ in 1:nv(g)])
+function incidency_list(g)::Array{Array{Int64}}
+    in_list::Array{Array{Int64}} = Array{Array{Int64}}([])
     for u in 1:nv(g)
-        push!(in_list[u],inneighbors(g,u))
+        push!(in_list,inneighbors(g,u))
     end
     return in_list
 end
