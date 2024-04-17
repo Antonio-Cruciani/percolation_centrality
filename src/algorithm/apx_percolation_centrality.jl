@@ -1,5 +1,5 @@
 
-function estimate_percolation_centrality(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64, alpha_sampling::Float64 = 1.0, mc_trials::Int64 = 25, empirical_peeling_a::Float64 = 2.0 )
+function estimate_percolation_centrality(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64, alpha_sampling::Float64 = 1.0, mc_trials::Int64 = 25, empirical_peeling_a::Float64 = 2.0,sample_size_diam::Int64 = 256 )
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
@@ -22,25 +22,30 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     emp_wimpy_node::Float64 = 0.0
     min_inv_wimpy_node::Float64 = 0.0
     max_perc::Float64 = 0.0
-    max_w::Float64 = 0.0
+    max_wv::Float64 = 0.0
     # Partitions 
     number_of_non_empty_partitions::Int64 = 0
     non_empty_partitions::Dict{Int64,Int64} = Dict{Int64,Int64}()
     partitions_ids_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
-    partition_index::Array{Int64} = zeros(tg.num_nodes)
+    partition_index::Array{Int64} = zeros(n)
     part_idx::Int64 = 1
     # Diameter approximation using Propagate/RandomBFS
-    # WIP
+    # Using Random BFS
+    println("Approximating diameter using Random BFS algorithm")
+    flush(stdout)
+    diam,time_diam = random_bfs(g,sample_size_diam)
+    finish_diam::String = string(round(time_diam; digits=4))
+    println("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
+    flush(stdout)
     # Sample size related
     omega::Float64 = 1000
     max_num_samples::Float64 = 0.0
-    tau::Int64 = trunc(Int64,max(1. / eps * (log(1. / delta)) , 100.))
+    tau::Int64 = trunc(Int64,max(1. / epsilon * (log(1. / delta)) , 100.))
     tau =  trunc(Int64,max(tau,2*(diam -1) * (log(1. / delta))) )
     println("Bootstrap phase "*string(tau)*" iterations")
     flush(stdout)
-
     for _ in 1:tau
-        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,betweenness,alpha_sampling)
+        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling,betweenness,true)
     end
     println("Empirical peeling phase:")
     flush(stdout)

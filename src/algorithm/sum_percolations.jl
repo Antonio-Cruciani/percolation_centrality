@@ -20,3 +20,8 @@ function ramp(x::Float64,y::Float64)::Float64
         return 0
     end
 end
+
+
+function random_percolations(n::Int64)::Array{Float64}
+    return Array{Float64}([rand() for _ in 1:n])
+end
