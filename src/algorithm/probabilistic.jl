@@ -192,3 +192,23 @@ function get_next_stopping_sample(ss::Float64,iteration_index::Int64)
     iteration_index +=1
     return ss,iteration_index
 end
+
+
+function compute_xi(B,r)
+    myf(x)= 1/x * log(sum([exp(x^2 * B[i]/(2*r^2)) for i in 1:lastindex(B)])) 
+    model = Model(NLopt.Optimizer)
+    set_optimizer_attribute(model, "algorithm", :LN_COBYLA)
+    local_optimizer = NLopt.Opt(:LD_LBFGS, 1)
+    set_optimizer_attribute(model, "local_optimizer", :LD_LBFGS)
+    local_optimizer.lower_bounds = [floatmin(Float64)]
+    local_optimizer.xtol_abs = 1e-4
+    local_optimizer.ftol_abs =1e-6
+    set_optimizer_attribute(model, "local_optimizer", local_optimizer)
+    #set_optimizer_attribute(model, "algorithm", :LN_COBYLA)
+    register(model,:myf, 1, myf, autodiff=true)
+    @variable(model, x >= 0)
+    @constraint(model,x >= 0)
+    @NLobjective(model, Min,myf(x))
+    JuMP.optimize!(model)
+    return(objective_value(model))
+end

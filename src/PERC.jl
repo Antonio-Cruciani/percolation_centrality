@@ -2,6 +2,8 @@ using Graphs
 using StatsBase
 using DataStructures
 using Base.Threads
+using JuMP
+using NLopt
 include("graph/graph.jl")
 include("algorithm/sum_percolations.jl")
 include("algorithm/path_sampler.jl")
