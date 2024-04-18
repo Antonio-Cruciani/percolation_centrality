@@ -1,5 +1,15 @@
 function percolation_centrality(g,percolation_states::Array{Float64},normalized::Bool = true)::Tuple{Array{Float64},Float64}
     @assert nv(g) == lastindex(percolation_states) "Vertex set and percolation array must have the same dimensions"
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(nv(g)))
+    @info("Number of edges "*string(ne(g)))
+    @info("Directed ? "*string(is_directed(g)))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stdout)
     @info("Computing percolation centrality")
     flush(stdout)
     start_time::Float64 = time()
