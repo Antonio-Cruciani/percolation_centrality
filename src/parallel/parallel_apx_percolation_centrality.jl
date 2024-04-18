@@ -46,7 +46,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     # Using Random BFS
     @info("Approximating diameter using Random BFS algorithm")
     flush(stdout)
-    diam,time_diam = random_bfs(g,sample_size_diam)
+    diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
     flush(stdout)
@@ -281,36 +281,188 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
     flush(stdout)
     return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time
-    # To do the rest
-    #WIP
 
-    
+end
 
 
-    #= Test
-    test_couples = []
-    for i in 1:n
-        for j in i:n
-            if i!=j
-                push!(test_couples,(i,j))
+
+
+function parallel_estimate_percolation_centrality_era(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,initial_sample::Int64 = 0,geo::Float64 = 1.2,sample_size_diam::Int64 = 256 )
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stdout)
+    ntasks = nthreads()
+    if initial_sample == 0
+        @info("Inferring the size of the first sample in the schedule")
+        initial_sample = trunc(Int64,floor((1+8*epsilon + sqrt(1+16*epsilon)*log(6/delta))/(4*epsilon*epsilon)))
+        @info("The size of the first sample in the schedule is "*string(initial_sample))
+        flush(stdout)
+    end
+
+    local_B::Array{Dict{Float64,Float64}} =  [Dict{Float64,Float64}() for i in 1:ntasks]
+    local_B_1::Array{Array{Float64}} =  [zeros(n) for i in 1:ntasks]
+    final_B_1::Array{Float64} = zeros(Float64,n)
+    local_B_2::Array{Array{Float64}} =  [zeros(n) for i in 1:ntasks]
+    B_vectorized::Array{Float64} =Array{Float64}([])
+    final_B_2::Array{Float64} = zeros(Float64,n)
+    start_time::Float64 = time()
+    k::Int64 = 0
+    j::Int64 = 2
+    keep_sampling::Bool = true
+    sampled_so_far::Int64 = 0
+    new_sample::Int64 = 0
+    sample_size_schedule::Array{Int64} = [0,initial_sample]
+    xi::Float64 = 0
+    tmp_perc_states::Array{Float64} = copy(percolation_states)
+    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    @info("Approximating diameter using Random BFS algorithm")
+    flush(stdout)
+    diam,time_diam = parallel_random_bfs(g,sample_size_diam)
+    finish_diam::String = string(round(time_diam; digits=4))
+    @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
+    flush(stdout)
+    max_sample::Float64 = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
+    if diam == 0
+        max_sample = Inf
+    end
+    while keep_sampling
+        k+=1
+        if (k >= 2)
+            new_sample = trunc(Int,geo^k*sample_size_schedule[2])
+            push!(sample_size_schedule,new_sample)
+        end
+
+        sample_i = sample_size_schedule[j]-sample_size_schedule[j-1]
+        task_size = cld(sample_i, ntasks)
+        vs_active = [i for i in 1:sample_i]
+        @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_i, task_size))
+            Threads.@spawn for _ in @view(vs_active[task_range])
+                _parallel_sz_bfs!(g,percolation_states,percolation_data,local_B[t],local_B_1[t],local_B_2[t])
+            end
+        end
+        sampled_so_far += sample_i
+        B_vectorized = reduce_dictionary(local_B)
+        if length(B_vectorized)>0
+            omega = compute_xi(B_vectorized,sample_size_schedule[j])
+            delta_i = delta/2^k
+            xi = 2*omega + (log(3/delta_i)+sqrt((log(3/delta_i)+4*sample_size_schedule[j]*omega)*log(3/delta_i)))/sample_size_schedule[j]  + sqrt(log(3/delta_i)/(2*sample_size_schedule[j]))
+        else
+            xi = Inf
+        end
+        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]))
+        if xi <= epsilon || sample_size_schedule[j] >= max_sample
+            keep_sampling = false
+        else
+            j+=1
+        end
+
+    end
+    final_B_1 = reduce(+,local_B_1) .*[1/sample_size_schedule[end]]
+    finish_time::Float64 = time()-start_time
+    @info("Converged! Sampled "*string(sample_size_schedule[end])*"/"*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
+    return final_B_1,sample_size_schedule,max_sample,xi,finish_time
+end
+
+
+function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},B::Dict{Float64,Float64},B_1::Array{Float64},B_2::Array{Float64})
+    n::Int64 = nv(g)
+    q::Queue{Int64} = Queue{Int64}()
+    ball::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{Int64} = zeros(Int64,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+
+    s::Int64 = sample(1:n)
+    z::Int64 = sample(1:n)
+    w::Int64 = 0
+    d_z_min::Float64 = Inf
+    q_backtrack::Queue{Int64} = Queue{Int64}()
+    while (s == z)
+        z = sample(1:n)
+    end
+    enqueue!(q,s)
+    dist[s] = 0
+    n_paths[s] = 1
+    ball[s] = 1
+    while length(q) != 0
+        w = dequeue!(q)
+        if dist[w] < d_z_min
+            for v in outneighbors(g,w)
+                if (ball[v] == 0)
+                    dist[v] = dist[w] +1
+                    ball[v] = 1
+                    n_paths[v] = n_paths[w]
+                    if (v == z)
+                        if dist[v] < d_z_min
+                            d_z_min = dist[v]
+                        end
+                        if length(q_backtrack) == 0
+                            enqueue!(q_backtrack,z)
+                        end
+                    end
+                    push!(pred[v],w)
+                    enqueue!(q,v)
+                elseif (dist[v] == dist[w] + 1)
+                    n_paths[v] += n_paths[w]
+                    push!(pred[v],w)
+                end
+
             end
         end
     end
-    println(" number of couples ",length(test_couples))
-    #println(test_couples)
-    for tc in test_couples
-        _random_path!(tc[1],tc[2],betweenness,sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling)
-    end
-    #println(betweenness)
-    
-    return (betweenness)
-    =#
-    #println(betweenness)
-    #println("---------------")
-    #println(percolation_centrality)
-    #println(wimpy_variance)
-    #println("-------------------------")
-    # println(shortest_path_length)
-    #println(percolated_path_length)
+    #backtrack
+   while length(q_backtrack)!=0
+        w = dequeue!(q_backtrack)
+        if w != s && w != z
+            summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+            # Updating phase
+            b = B_2[w]
+            b_1 = b + summand^2
+            if !haskey(B,b_1) 
+                B[b_1] = 1
+            else
+                B[b_1] += 1
+            end
+            if b > 0 && B[b] >= 1
+                B[b] -= 1
+            end
+            if b > 0 && B[b] == 0
+                delete!(B, b)
+            end
+            B_1[w] += summand
+            B_2[w] += summand^2
+        end
+        for p in pred[w]
+            enqueue!(q_backtrack,p)
+        end
+   end
+   
 
+   return nothing
+end
+
+
+function reduce_dictionary(B::Array{Dict{Float64,Float64}})::Vector{Float64}
+    B_new::Dict{Float64,Float64} = Dict{Float64,Float64}()
+    for cur_B in B
+        for b_1 in keys(cur_B)
+            if !haskey(B_new,b_1)
+                B_new[b_1] = 1
+            else
+                B_new[b_1] +=1
+            end
+        end
+    end
+    return collect(keys(B_new))
 end

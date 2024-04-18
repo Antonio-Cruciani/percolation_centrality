@@ -1,4 +1,4 @@
-function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
+function parallel_random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     start_time::Float64 = time()
     n::Int64 = nv(g)
     ntasks = nthreads()
