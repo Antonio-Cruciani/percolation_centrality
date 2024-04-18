@@ -11,7 +11,7 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     # If sample size set to 0, compute the exact diameter
     if sample_size == 0
         sample_size = n
-        println("Computing Exact Diameter")
+        @info("Computing Exact Diameter")
         flush(stdout)
     end
     for i in 1:sample_size

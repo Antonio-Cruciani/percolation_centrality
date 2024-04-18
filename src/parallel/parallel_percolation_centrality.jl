@@ -8,10 +8,9 @@ function parallel_percolation_centrality(g,percolation_states::Array{Float64},no
     @info("Maximum Percolated state "*string(maximum(percolation_states)))
     @info("Minimum Percolated state "*string(minimum(percolation_states)))
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
-    @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
-    @info("Computing percolation centrality")
     @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    @info("Computing percolation centrality")
     flush(stdout)
     start_time::Float64 = time()
     n::Int64 = nv(g)
@@ -19,15 +18,6 @@ function parallel_percolation_centrality(g,percolation_states::Array{Float64},no
     d, r = divrem(n, nthreads())
     ntasks = d == 0 ? r : nthreads()
     task_size = cld(n, ntasks)
-    #=
-    delta::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
-    dist::Array{Array{Int64}} = [zeros(Int64,n) for _ in 1:ntasks]
-    ball::Array{Array{Int16}} = [zeros(Int16,n) for _ in 1:ntasks]
-    n_paths::Array{Array{Int64}} = [zeros(Int64,n) for _ in 1:ntasks]
-    pred::Array{Array{Array{Int64}}} = [Array{Array{Int64}}([[] for _ in 1:n]) for _ in 1:ntasks]
-    q::Array{Queue{Int64}} = [Queue{Int64}() for _ in 1:ntasks]
-    s::Array{Stack{Int64}} = [Stack{Int64}() for _ in 1:ntasks]
-    =#
     percolation::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
     final_percolation::Array{Float64} = zeros(Float64,n)
     sum_percolations::Float64 = sum(percolation_states)
