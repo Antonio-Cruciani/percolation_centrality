@@ -1,6 +1,6 @@
 function percolation_centrality(g,percolation_states::Array{Float64},normalized::Bool = true)::Tuple{Array{Float64},Float64}
     @assert nv(g) == lastindex(percolation_states) "Vertex set and percolation array must have the same dimensions"
-    println("Computing percolation centrality")
+    @info("Computing percolation centrality")
     flush(stdout)
     start_time::Float64 = time()
     n::Int64 = nv(g)
@@ -60,7 +60,7 @@ function percolation_centrality(g,percolation_states::Array{Float64},normalized:
         percolation = percolation .* [1/(n*(n-1))]
     end
     finish_time::Float64 = time()-start_time
-    println("Percolation centrality computed in "*string(finish_time))
+    @info("Percolation centrality computed in "*string(finish_time))
     flush(stdout)
     return percolation,finish_time
 end
