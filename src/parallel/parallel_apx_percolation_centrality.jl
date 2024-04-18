@@ -71,6 +71,16 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     # Reducing
     changed::Bool = false
     old_diam::Int64 = final_new_diam_estimate[1]
+    for t in 1:ntasks
+        if final_new_diam_estimate[1] < new_diam_estimate[t][1]
+            changed = true
+            final_new_diam_estimate[1] =  new_diam_estimate[t][1]
+        end
+    end
+    final_percolation_centrality = reduce(+,percolation_centrality) .* [1/tau]
+    final_wimpy_variance = reduce(+,wimpy_variance)
+    final_shortest_path_length = reduce(+,shortest_path_length)
+    #=
     for u in 1:n
         for t in 1:ntasks
             final_mcrade[u] += mcrade[t][u]
@@ -83,13 +93,15 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
                 final_new_diam_estimate[1] =  new_diam_estimate[t][1]
             end
         end
+        
         #final_mcrade[u] = final_mcrade[u] /tau
         final_percolation_centrality[u] = final_percolation_centrality[u] /tau
         #final_wimpy_variance[u] = final_wimpy_variance[u] /tau
         #final_shortest_path_length[u] = final_shortest_path_length[u] /tau
         #final_percolated_path_length[u] = final_percolated_path_length[u] /tau
+        
     end
-    
+    =#
 
     #betweenness = betweenness .* [1/tau]
     @info("Empirical peeling phase:")
@@ -210,6 +222,16 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
         if !has_to_stop & (num_samples < last_stopping_samples)&(num_samples >= next_stopping_samples)
             changed = false
             old_diam = diam
+            for t in 1:ntasks
+                if final_new_diam_estimate[1] < new_diam_estimate[t][1]
+                    changed = true
+                    final_new_diam_estimate[1] =  new_diam_estimate[t][1]
+                end
+            end
+            final_percolation_centrality = reduce(+,percolation_centrality)
+            final_wimpy_variance = reduce(+,wimpy_variance)
+            final_shortest_path_length = reduce(+,shortest_path_length)
+            #=
             for u in 1:n
                 for t in 1:ntasks
                     final_mcrade[u] += mcrade[t][u]
@@ -222,12 +244,13 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
                         final_new_diam_estimate[1] =  new_diam_estimate[t][1]
                     end
                 end
+                =#
                 #final_mcrade[u] = final_mcrade[u] /tau
                 #final_percolation_centrality[u] = final_percolation_centrality[u] /num_samples
                 #final_wimpy_variance[u] = final_wimpy_variance[u] /tau
                 #final_shortest_path_length[u] = final_shortest_path_length[u] /tau
                 #final_percolated_path_length[u] = final_percolated_path_length[u] /tau
-            end
+            #end
             @info("----------------------------| Iteration : "*string(iteration_index)*" |----------------------------")
             if changed
                 @info("Diameter estimation refined from "*string(old_diam)*" to "*string(final_new_diam_estimate[1]))
