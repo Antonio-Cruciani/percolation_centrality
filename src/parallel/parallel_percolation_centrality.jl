@@ -14,6 +14,8 @@ function parallel_percolation_centrality(g,percolation_states::Array{Float64},no
     flush(stdout)
     start_time::Float64 = time()
     n::Int64 = nv(g)
+    #percent_status::Array{Tuple{Float64,Int64,String}} = [(0.25,trunc(Int64,n*0.25),"Analyzed 25% of the graph"),(0.50,trunc(Int64,n*0.50),"Analyzed 50% of the graph"),(0.75,trunc(Int64,n*0.75),"Analyzed 75% of the graph"),(0.9,trunc(Int64,n*0.9),"Analyzed 90% of the graph")]
+    #percent_index::Int16 = 1
     vs_active = [i for i in 1:n]
     d, r = divrem(n, nthreads())
     ntasks = d == 0 ? r : nthreads()
@@ -28,6 +30,16 @@ function parallel_percolation_centrality(g,percolation_states::Array{Float64},no
                 clean_gc()
                 sleep(0.01)
             end
+            #=
+            if percent_index <= length(percent_status)
+                if trunc(Int64,s*percent_status[percent_index][1]) == percent_status[percent_index][2]
+                    finish_partial = string(round(time()-start_time; digits=4))
+                    est =string(round( (time()-start_time )* n/s;digits = 4))
+                    @info(percent_status[percent_index][3]*" in "*finish_partial*" seconds | Estimated remaining time "*est* " seconds")
+                    percent_index+=1
+                end
+            end
+            =#
         end
     end
     final_percolation = reduce(+,percolation)

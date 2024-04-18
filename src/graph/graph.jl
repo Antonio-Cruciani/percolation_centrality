@@ -24,22 +24,23 @@ function load_graph(file_name::String,directed::Bool = true,sep::String = " ")
         if u != v
             if (!haskey(file_id_to_graph_id, u))
                 file_id_to_graph_id[u] = current_node_id
-                push!(file_id, u)
+                #push!(file_id, u)
                 current_node_id = current_node_id + 1
             end
             if (!haskey(file_id_to_graph_id, v))
                 file_id_to_graph_id[v] = current_node_id
-                push!(file_id, v)
+                #push!(file_id, v)
                 current_node_id = current_node_id + 1
             end 
+            
+            if directed
+                push!(edges,(u,v))
+            else
+                push!(edges,(min(u,v),max(u,v)))
+            end
+            push!(nodes,u)
+            push!(nodes,v)
         end
-        if directed
-            push!(edges,(u,v))
-        else
-            push!(edges,(min(u,v),max(u,v)))
-        end
-        push!(nodes,u)
-        push!(nodes,v)
     end
     close(f)
 

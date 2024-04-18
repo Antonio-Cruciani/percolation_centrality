@@ -238,7 +238,7 @@ function estimate_percolation_centrality_era(g,percolation_states::Array{Float64
     new_sample::Int64 = 0
     sample_size_schedule::Array{Int64} = [0,initial_sample]
     xi::Float64 = 0
-    sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    #sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
     tmp_perc_states::Array{Float64} = copy(percolation_states)
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     @info("Approximating diameter using Random BFS algorithm")
