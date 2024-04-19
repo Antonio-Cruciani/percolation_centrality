@@ -77,9 +77,18 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
             final_new_diam_estimate[1] =  new_diam_estimate[t][1]
         end
     end
-    final_percolation_centrality = reduce(+,percolation_centrality) .* [1/tau]
-    final_wimpy_variance = reduce(+,wimpy_variance)
-    final_shortest_path_length = reduce(+,shortest_path_length)
+
+    # reducing
+    task_size = cld(n, ntasks)
+    vs_active = [i for i in 1:n]
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
+        Threads.@spawn for u in @view(vs_active[task_range])
+            _reduce_data!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length)
+        end
+    end
+    #final_percolation_centrality = reduce(+,percolation_centrality) .* [1/tau]
+    #final_wimpy_variance = reduce(+,wimpy_variance)
+    #final_shortest_path_length = reduce(+,shortest_path_length)
     #=
     for u in 1:n
         for t in 1:ntasks
@@ -228,9 +237,18 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
                     final_new_diam_estimate[1] =  new_diam_estimate[t][1]
                 end
             end
-            final_percolation_centrality = reduce(+,percolation_centrality)
-            final_wimpy_variance = reduce(+,wimpy_variance)
-            final_shortest_path_length = reduce(+,shortest_path_length)
+            # reducing
+            task_size = cld(n, ntasks)
+            vs_active = [i for i in 1:n]
+            @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
+                Threads.@spawn for u in @view(vs_active[task_range])
+                    _reduce_data!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length)
+                end
+            end
+
+            #final_percolation_centrality = reduce(+,percolation_centrality)
+            #final_wimpy_variance = reduce(+,wimpy_variance)
+            #final_shortest_path_length = reduce(+,shortest_path_length)
             #=
             for u in 1:n
                 for t in 1:ntasks
