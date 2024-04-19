@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},boostrap_phase::Bool = false)
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool =true,boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
@@ -206,10 +206,14 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
                 end
 
                 if ball[u] == @visited_s
-                    percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    if run_perc
+                        percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    end
                 else
                     longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
-                    percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    if run_perc
+                        percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    end
                 end
             end
         end
@@ -228,7 +232,11 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     for u in keys(path_map)
         pm_value = path_map[u]
         #println("PM VAL ",pm_value, " RAMP ",ramp(percolation_states[s],percolation_states[z])," DENOM ",percolation_data[2][u], " num path sample ",num_path_to_sample)
-        percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        if run_perc
+            percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        else
+            percolation_value = pm_value/num_path_to_sample
+        end
         percolation_centrality[u] += percolation_value
         #betweenness[u] += pm_value/num_path_to_sample
         # check whether the denominator must be squared too
@@ -244,14 +252,16 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             end
         end
         # Normalizing the percolated_path_length
-        percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
+        if perc
+            percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
+        end
     end
 
     return nothing
 end
 
 
-function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},boostrap_phase::Bool = false)
+function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool = true,boostrap_phase::Bool = false)
 
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
@@ -446,10 +456,14 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
                 end
 
                 if ball[u] == @visited_s
-                    percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    if run_perc
+                        percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    end
                 else
-                    longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
-                    percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    if run_perc
+                        longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
+                        percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                    end
                 end
             end
         end
@@ -468,7 +482,11 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
     for u in keys(path_map)
         pm_value = path_map[u]
         #println("PM VAL ",pm_value, " RAMP ",ramp(percolation_states[s],percolation_states[z])," DENOM ",percolation_data[2][u], " num path sample ",num_path_to_sample)
-        percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        if run_perc
+            percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+        else
+            percolation_value = pm_value/num_path_to_sample
+        end
         percolation_centrality[u] += percolation_value
         #betweenness[u] += pm_value/num_path_to_sample
         # check whether the denominator must be squared too
@@ -484,7 +502,9 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
             end
         end
         # Normalizing the percolated_path_length
-        percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
+        if run_perc
+            percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
+        end
     end
 
     return nothing

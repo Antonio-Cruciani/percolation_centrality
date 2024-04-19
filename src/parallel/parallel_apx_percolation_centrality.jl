@@ -1,5 +1,6 @@
 
 function parallel_estimate_percolation_centrality(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64, alpha_sampling::Float64 = 0.1, mc_trials::Int64 = 25, empirical_peeling_a::Float64 = 2.0,sample_size_diam::Int64 = 256 )
+    @assert nv(g) == lastindex(percolation_states) "Length of the percolation state array must be the same as the number of nodes"
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
@@ -16,7 +17,11 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     flush(stdout)
     ntasks = nthreads()
     sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
-   
+    run_perc::Bool = true
+    if std(percolation_states) == 0
+        run_perc = false
+        @info("Percolation states are all the same, percolation centrality is equal to the betweenness centrality")
+    end
     percolation_centrality::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
     final_percolation_centrality::Array{Float64} = zeros(Float64,n)
     wimpy_variance::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
@@ -64,7 +69,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     vs_active = [i for i in 1:tau]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:tau, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
-            _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],true)
+            _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,true)
         end
     end
   
@@ -211,7 +216,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
         vs_active = [i for i in 1:sample_i]
         @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_i, task_size))
             Threads.@spawn for _ in @view(vs_active[task_range])
-                _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],true)
+                _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,true)
                 if (Sys.free_memory() / Sys.total_memory() < 0.1)
                     clean_gc()
                     sleep(0.01)
