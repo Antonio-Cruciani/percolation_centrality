@@ -6,6 +6,9 @@ using JuMP
 using NLopt
 include("graph/graph.jl")
 include("utilities/thread_tools.jl")
+include("utilities/stats.jl")
+include("utilities/file_operations.jl")
+
 include("algorithm/sum_percolations.jl")
 include("algorithm/path_sampler.jl")
 include("algorithm/probabilistic.jl")

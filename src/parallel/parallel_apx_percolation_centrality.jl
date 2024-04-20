@@ -126,10 +126,10 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
         flush(stdout)
     end
     for i in 1:n
-        max_perc = max(max_perc,final_percolation_centrality[i])
+        max_perc = max(max_perc,final_percolation_centrality[i]/tau)
         #max_bc = max(max_bc,betweenness[i])
 
-        max_wv = max(max_wv,final_wimpy_variance[i])
+        max_wv = max(max_wv,final_wimpy_variance[i]/tau)
         emp_w_node = final_wimpy_variance[i] * 1. /tau
         min_inv_w_node = min(1. /emp_w_node,tau)
         node_partition_idx = trunc(Int,log(min_inv_w_node)/log(empirical_peeling_a)+1)

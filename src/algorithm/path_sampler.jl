@@ -210,8 +210,8 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
                         percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
                     end
                 else
-                    longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
                     if run_perc
+                        longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
                         percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
                     end
                 end
@@ -252,7 +252,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             end
         end
         # Normalizing the percolated_path_length
-        if perc
+        if run_perc
             percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
         end
     end

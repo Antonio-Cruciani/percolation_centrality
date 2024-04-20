@@ -148,6 +148,8 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     sample_i::Int64 = 0
     num_samples::Int64 = 0
     iteration_index::Int64 =1 
+    #cur_time::Float64 = 0.0
+    #est_time::Float64 = 0.0
     while !has_to_stop
         sample_i = trunc(Int,next_stopping_samples-prev_stopping_samples)
         for _ in 1:sample_i
@@ -182,6 +184,9 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
                 prev_stopping_samples = next_stopping_samples
                 next_stopping_samples,iteration_index = get_next_stopping_sample(next_stopping_samples,iteration_index )
                 @info("Increasing sample size to "*string(next_stopping_samples))
+                #cur_time = time() - start_time
+                #est_time = cur_time*max_num_samples/prev_stopping_samples
+                #@info("Current execution time "*string(round(cur_time;digits = 4))*" Estimated overall running time "*string(round(est_time;digits = 4)))
                 flush(stdout)
             end
             @info("---------------------------------------------------------------------------------------------------")
@@ -196,7 +201,7 @@ end
 
 
 
-
+# Deterministic Bound on ERA
 function estimate_percolation_centrality_era(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,initial_sample::Int64 = 0,geo::Float64 = 1.2,sample_size_diam::Int64 = 256 )
     n::Int64 = nv(g)
     m::Int64 = ne(g)
@@ -269,7 +274,7 @@ function estimate_percolation_centrality_era(g,percolation_states::Array{Float64
         else
             xi = Inf
         end
-        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]))
+        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j])*" in "*string(round(time()-start_time;digits = 4)))
         if xi <= epsilon || sample_size_schedule[j] >= max_sample
             keep_sampling = false
         else
@@ -283,7 +288,6 @@ function estimate_percolation_centrality_era(g,percolation_states::Array{Float64
 
 end
 
-# to finish
 function _sz_bfs!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},q::Queue{Int64},ball::Array{Int16},dist::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}},B::Dict{Float64,Float64},B_1::Array{Float64},B_2::Array{Float64})
     n::Int64 = nv(g)
     s::Int64 = sample(1:n)
@@ -363,3 +367,123 @@ function _sz_bfs!(g,percolation_states::Array{Float64},percolation_data::Tuple{F
 end
 
 
+# Fixed sample size
+function estimate_percolation_centrality_fixed_sample_size(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,sample_size_diam::Int64 = 256 )
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stdout)
+    start_time::Float64 = time()
+    
+    q::Queue{Int64} = Queue{Int64}()
+    ball::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{Int64} = zeros(Int64,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+
+
+    percolation_centrality::Array{Float64} =  zeros(Float64,n)
+    
+    #sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    tmp_perc_states::Array{Float64} = copy(percolation_states)
+    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    @info("Approximating diameter using Random BFS algorithm")
+    flush(stdout)
+    diam,time_diam = random_bfs(g,sample_size_diam)
+    finish_diam::String = string(round(time_diam; digits=4))
+    @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
+    flush(stdout)
+    max_sample::Float64 = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
+    if diam == 0
+        max_sample = Inf
+    end
+    @info("Maximum sample size "*string(trunc(Int64,max_sample)))
+    for _ in 1:max_sample
+        _sz_bfs_fss!(g,percolation_states,percolation_data,q,ball,dist,n_paths,pred,percolation_centrality)
+    end
+    finish_time::Float64 = time()-start_time
+    @info("Completed! Sampled "*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
+    return percolation_centrality.*[1/max_sample],max_sample,finish_time
+end
+
+
+function _sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},q::Queue{Int64},ball::Array{Int16},dist::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}},percolation_centrality::Array{Float64})
+    n::Int64 = nv(g)
+    s::Int64 = sample(1:n)
+    z::Int64 = sample(1:n)
+    w::Int64 = 0
+    d_z_min::Float64 = Inf
+    tot_weight::Int64 = 0
+    random_edge::Int64 = 0
+    cur_edge::Int64 = 0
+    path::Array{Int64} = Array{Int64}([])
+    q_backtrack::Queue{Int64} = Queue{Int64}()
+    while (s == z)
+        z = sample(1:n)
+    end
+    for u in 1:n
+        ball[u] = 0
+        dist[u] = 0
+        n_paths[u] = 0
+        pred[u] = Array{Int64}([])
+   end
+    q = Queue{Int64}()
+    enqueue!(q,s)
+    dist[s] = 0
+    n_paths[s] = 1
+    ball[s] = 1
+    while length(q) != 0
+        w = dequeue!(q)
+        if dist[w] < d_z_min
+            for v in outneighbors(g,w)
+                if (ball[v] == 0)
+                    dist[v] = dist[w] +1
+                    ball[v] = 1
+                    n_paths[v] = n_paths[w]
+                    if (v == z)
+                        if dist[v] < d_z_min
+                            d_z_min = dist[v]
+                        end
+                        if length(q_backtrack) == 0
+                            enqueue!(q_backtrack,z)
+                        end
+                    end
+                    push!(pred[v],w)
+                    enqueue!(q,v)
+                elseif (dist[v] == dist[w] + 1)
+                    n_paths[v] += n_paths[w]
+                    push!(pred[v],w)
+                end
+
+            end
+        end
+    end
+    #backtrack
+    if length(q_backtrack) != 0
+        w = dequeue!(q_backtrack)
+        tot_weight = n_paths[z]
+        random_edge = rand(0:tot_weight-1)
+        cur_edge = 0
+        for p in pred[z]
+            cur_edge += n_paths[p]
+            if cur_edge > random_edge
+                _backtrack_path!(s,z,p,path,n_paths,pred)
+                break;
+            end
+        end
+        for w in path
+            percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+        end
+    end  
+
+   return nothing
+end
