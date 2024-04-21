@@ -23,7 +23,6 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     percolation_centrality::Array{Float64} = zeros(Float64,n)
     wimpy_variance::Array{Float64} = zeros(Float64,n)
     shortest_path_length::Array{Int64} = zeros(Int64,n+1)
-    percolated_path_length::Array{Float64} = zeros(Float64,n+1)
     mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
     tmp_perc_states::Array{Float64} = copy(percolation_states)
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
@@ -58,7 +57,7 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     flush(stdout)
     new_diam_estimate::Array{Int64} = [diam]
     for _ in 1:tau
-        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true)
+        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true,true)
     end
     #betweenness = betweenness .* [1/tau]
     percolation_centrality = percolation_centrality .* [1/tau]
@@ -140,7 +139,6 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     percolation_centrality = zeros(Float64,n)
     wimpy_variance = zeros(Float64,n)
     shortest_path_length = zeros(Int64,n+1)
-    percolated_path_length = zeros(Float64,n+1)
     mcrade = zeros(Float64,(n+1)*mc_trials)
     next_stopping_samples::Float64 = first_stopping_samples
     prev_stopping_samples::Float64 = 0.0
@@ -153,7 +151,7 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     while !has_to_stop
         sample_i = trunc(Int,next_stopping_samples-prev_stopping_samples)
         for _ in 1:sample_i
-            _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,percolated_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true)
+            _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true,false)
         end
         num_samples += sample_i
         if num_samples >= omega

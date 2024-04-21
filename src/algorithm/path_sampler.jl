@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool =true,boostrap_phase::Bool = false)
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool =true,boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
@@ -204,17 +204,6 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
                 else
                     path_map[u] = 1
                 end
-
-                if ball[u] == @visited_s
-                    if run_perc
-                        percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
-                    end
-                else
-                    if run_perc
-                        longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
-                        percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
-                    end
-                end
             end
         end
 
@@ -252,16 +241,18 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
             end
         end
         # Normalizing the percolated_path_length
+        #=
         if run_perc
             percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
         end
+        =#
     end
 
     return nothing
 end
 
 
-function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},percolated_path_length::Array{Float64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool = true,boostrap_phase::Bool = false)
+function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool = true,boostrap_phase::Bool = false)
 
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
@@ -407,16 +398,7 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
         end
         end_cur = new_end_cur
     end
-    if (length(sp_edges) == 0)
-        for u in 1:end_q
-            ball[q[u]] = @unvisited
-            dist[q[u]] = 0
-            pred[q[u]] = Array{Int64}([])
-            # Check this npaths and q, they should be set back to 0 once finished
-            n_paths[q[u]] = 0
-            q[u] = 0
-        end
-    else
+    if (length(sp_edges) != 0)
         for p in sp_edges
             tot_weight += n_paths[p[1]] * n_paths[p[2]]
         end
@@ -454,20 +436,24 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
                 else
                     path_map[u] = 1
                 end
-
-                if ball[u] == @visited_s
-                    if run_perc
-                        percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                #=
+                    if ball[u] == @visited_s
+                        if run_perc
+                            percolated_path_length[dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                        end
+                    else
+                        if run_perc
+                            longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
+                            percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
+                        end
                     end
-                else
-                    if run_perc
-                        longest_dist = dist[sp_edges[1][1]] + dist[sp_edges[1][2]]
-                        percolated_path_length[longest_dist-dist[u]+1] += ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]
-                    end
-                end
+                =#
             end
         end
-
+        #=x - y
+           println("a ",a," x ",x)
+           @reduce(s += a, t += b)
+  
         for u in 1:end_q
             ball[q[u]] = @unvisited
             dist[q[u]] = 0
@@ -476,6 +462,7 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
             n_paths[q[u]] = 0
             q[u] = 0
         end
+        =#
     end
     # Updating Percolation centrality, wimpy variance and c-MCERA
     #println("PATH MAP ",path_map," PERC STATES ",percolation_states)
@@ -502,9 +489,11 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
             end
         end
         # Normalizing the percolated_path_length
-        if run_perc
-            percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
-        end
+        #=
+            if run_perc
+                percolated_path_length[u] = percolated_path_length[u]/num_path_to_sample
+            end
+        =#
     end
 
     return nothing

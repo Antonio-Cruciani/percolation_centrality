@@ -28,8 +28,6 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     final_wimpy_variance::Array{Float64} = zeros(Float64,n)
     shortest_path_length::Array{Array{Int64}} = [zeros(Int64,n+1) for _ in 1:ntasks]
     final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
-    percolated_path_length::Array{Array{Float64}} = [zeros(Float64,n+1) for _ in 1:ntasks]
-    final_percolated_path_length::Array{Float64} = zeros(Float64,n+1)
     mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
     final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
     tmp_perc_states::Array{Float64} = copy(percolation_states)
@@ -69,7 +67,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     vs_active = [i for i in 1:tau]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:tau, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
-            _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,true)
+            _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,true)
         end
     end
   
@@ -199,8 +197,6 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     final_wimpy_variance = Array{Float64}(zeros(Float64,n))
     shortest_path_length = Array{Array{Int64}}([zeros(Int64,n+1) for _ in 1:ntasks])
     final_shortest_path_length = Array{Int64}(zeros(Int64,n+1))
-    percolated_path_length = Array{Array{Float64}}([zeros(Float64,n+1) for _ in 1:ntasks])
-    final_percolated_path_length = Array{Float64}(zeros(Float64,n+1))
     mcrade = Array{Array{Float64}}([zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks])
     final_mcrade = Array{Float64}(zeros(Float64,(n+1)*mc_trials))
 
@@ -216,7 +212,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
         vs_active = [i for i in 1:sample_i]
         @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_i, task_size))
             Threads.@spawn for _ in @view(vs_active[task_range])
-                _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],percolated_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,true)
+                _parallel_random_path!(sg,n,percolation_centrality[t],wimpy_variance[t],percolation_states,percolation_data,shortest_path_length[t],mcrade[t],mc_trials,alpha_sampling,new_diam_estimate[t],run_perc,false)
                 if (Sys.free_memory() / Sys.total_memory() < 0.1)
                     clean_gc()
                     sleep(0.01)
@@ -243,6 +239,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
                 end
             end
             # reducing
+            #r_time = time()
             task_size = cld(n, ntasks)
             vs_active = [i for i in 1:n]
             @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
@@ -250,7 +247,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
                     _reduce_data!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length)
                 end
             end
-
+            #println("Iteration "*string(iteration_index)*" reduce time "*string(time()-r_time))
             #final_percolation_centrality = reduce(+,percolation_centrality)
             #final_wimpy_variance = reduce(+,wimpy_variance)
             #final_shortest_path_length = reduce(+,shortest_path_length)
@@ -488,4 +485,137 @@ function reduce_dictionary(B::Array{Dict{Float64,Float64}})::Vector{Float64}
         end
     end
     return collect(keys(B_new))
+end
+
+
+# Fixed sample size
+function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,sample_size_diam::Int64 = 256 )
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stdout)
+    ntasks = nthreads()
+    start_time::Float64 = time()
+    
+    
+
+    final_percolation_centrality::Array{Float64} = zeros(Float64,n)
+    percolation_centrality::Array{Array{Float64}} =  [zeros(Float64,n) for _ in 1:ntasks]
+    
+    #sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    tmp_perc_states::Array{Float64} = copy(percolation_states)
+    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    @info("Approximating diameter using Random BFS algorithm")
+    flush(stdout)
+    diam,time_diam = parallel_random_bfs(g,sample_size_diam)
+    finish_diam::String = string(round(time_diam; digits=4))
+    @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
+    flush(stdout)
+    max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
+    @info("Maximum sample size "*string(max_sample))
+    flush(stdout)
+    task_size = cld(max_sample, ntasks)
+    vs_active = [i for i in 1:max_sample]
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:max_sample, task_size))
+        Threads.@spawn for _ in @view(vs_active[task_range])
+            _parallel_sz_bfs_fss!(g,percolation_states,percolation_data,percolation_centrality[t])
+        end
+    end
+
+     # reducing
+     task_size = cld(n, ntasks)
+     vs_active = [i for i in 1:n]
+     @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
+         Threads.@spawn for u in @view(vs_active[task_range])
+             _reduce_data_a!(u,ntasks,percolation_centrality,final_percolation_centrality)
+         end
+     end
+
+
+    finish_time::Float64 = time()-start_time
+    @info("Completed! Sampled "*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
+    flush(stdout)
+    return final_percolation_centrality.*[1/max_sample],max_sample,finish_time
+end
+
+
+function _parallel_sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},percolation_centrality::Array{Float64})
+    n::Int64 = nv(g)
+    s::Int64 = sample(1:n)
+    z::Int64 = sample(1:n)
+    w::Int64 = 0
+    q::Queue{Int64} = Queue{Int64}()
+    ball::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{Int64} = zeros(Int64,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+    d_z_min::Float64 = Inf
+    tot_weight::Int64 = 0
+    random_edge::Int64 = 0
+    cur_edge::Int64 = 0
+    path::Array{Int64} = Array{Int64}([])
+    q_backtrack::Queue{Int64} = Queue{Int64}()
+    while (s == z)
+        z = sample(1:n)
+    end
+   
+    enqueue!(q,s)
+    dist[s] = 0
+    n_paths[s] = 1
+    ball[s] = 1
+    while length(q) != 0
+        w = dequeue!(q)
+        if dist[w] < d_z_min
+            for v in outneighbors(g,w)
+                if (ball[v] == 0)
+                    dist[v] = dist[w] +1
+                    ball[v] = 1
+                    n_paths[v] = n_paths[w]
+                    if (v == z)
+                        if dist[v] < d_z_min
+                            d_z_min = dist[v]
+                        end
+                        if length(q_backtrack) == 0
+                            enqueue!(q_backtrack,z)
+                        end
+                    end
+                    push!(pred[v],w)
+                    enqueue!(q,v)
+                elseif (dist[v] == dist[w] + 1)
+                    n_paths[v] += n_paths[w]
+                    push!(pred[v],w)
+                end
+
+            end
+        end
+    end
+    #backtrack
+    if length(q_backtrack) != 0
+        w = dequeue!(q_backtrack)
+        tot_weight = n_paths[z]
+        random_edge = rand(0:tot_weight-1)
+        cur_edge = 0
+        for p in pred[z]
+            cur_edge += n_paths[p]
+            if cur_edge > random_edge
+                _backtrack_path!(s,z,p,path,n_paths,pred)
+                break;
+            end
+        end
+        for w in path
+            percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+        end
+    end  
+
+   return nothing
 end
