@@ -14,6 +14,11 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     @info("---------------------------------------------------------------------------------------------------")
     flush(stdout)
     sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    run_perc::Bool = true
+    if std(percolation_states) == 0
+        run_perc = false
+        @info("Percolation states are all the same, percolation centrality is equal to the betweenness centrality")
+    end
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
     n_paths::Array{Int64} = zeros(Int64,n)
@@ -57,7 +62,7 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     flush(stdout)
     new_diam_estimate::Array{Int64} = [diam]
     for _ in 1:tau
-        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true,true)
+        _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,run_perc,true)
     end
     #betweenness = betweenness .* [1/tau]
     percolation_centrality = percolation_centrality .* [1/tau]
@@ -151,7 +156,7 @@ function estimate_percolation_centrality(g,percolation_states::Array{Float64},ep
     while !has_to_stop
         sample_i = trunc(Int,next_stopping_samples-prev_stopping_samples)
         for _ in 1:sample_i
-            _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,true,false)
+            _random_path!(sg,n,q,ball,n_paths,dist,pred,num_paths,percolation_centrality,wimpy_variance,percolation_states,percolation_data,shortest_path_length,mcrade,mc_trials,alpha_sampling,new_diam_estimate,run_perc,false)
         end
         num_samples += sample_i
         if num_samples >= omega
