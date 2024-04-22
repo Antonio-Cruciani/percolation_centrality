@@ -8,6 +8,7 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     ball::Array{Int16} = zeros(Int16,n)
     s::Int64 = -1
     w::Int64 = -1
+    reachable_pairs::Int64 = 0
     # If sample size set to 0, compute the exact diameter
     if sample_size == 0
         sample_size = n
@@ -28,6 +29,7 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
             for v in outneighbors(g,w)
                 if ball[v] == 0
                     dist[v] = dist[w] +1
+                    reachable_pairs += 1
                     if dist[v] > diam_lb
                         diam_lb = dist[v]
                     end
@@ -41,5 +43,8 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
             ball[v] = 0
         end
     end
+    alpha::Float64 = n*reachable_pairs/(sample_size*n*(n-1))
+    @info("Connectivity rate "*string(round(alpha;digits = 5)))
+    flush(stdout)
     return diam_lb,time()-start_time
 end

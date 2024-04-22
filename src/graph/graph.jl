@@ -54,28 +54,28 @@ function load_graph(file_name::String,directed::Bool = true,sep::String = " ")
     for e in collect(edges)
         res = add_edge!(g,file_id_to_graph_id[e[1]],file_id_to_graph_id[e[2]])
         if !res 
-			println("Edge not added! "*string(e[1])*" , "*string(e[2]))
-			println("Edge not added! "*string(file_id_to_graph_id[e[1]])*" , "*string(file_id_to_graph_id[e[2]]))
+			@info("Edge not added! "*string(e[1])*" , "*string(e[2]))
+			@info("Edge not added! "*string(file_id_to_graph_id[e[1]])*" , "*string(file_id_to_graph_id[e[2]]))
 		end
     end
     loading_time = time() - start_time
-    println("Loaded Graph ")
-	println("#Nodes "*string(nv(g)))
-	println("#Edges "*string(ne(g)))
-	println("Directed ? "*string(directed))
-    println("Loading time "*string(loading_time)*" seconds")
+    @info("Loaded Graph ")
+	@info("#Nodes "*string(nv(g)))
+	@info("#Edges "*string(ne(g)))
+	@info("Directed ? "*string(directed))
+    @info("Loading time "*string(loading_time)*" seconds")
 	return g
 end
 
 
 function print_stats(g; graph_name="anonymous")
-    println("====================================================")
-    println("Network: " * graph_name)
-    println("====================================================")
-    println("Number of nodes " * string(nv(g)))
-    println("Number of edges " * string(length(ne(g))))
-    println("Is the graph directed? " * string(is_directed(g)))
-    println("====================================================")
+    @info("====================================================")
+    @info("Network: " * graph_name)
+    @info("====================================================")
+    @info("Number of nodes " * string(nv(g)))
+    @info("Number of edges " * string(length(ne(g))))
+    @info("Is the graph directed? " * string(is_directed(g)))
+    @info("====================================================")
 end
 
 

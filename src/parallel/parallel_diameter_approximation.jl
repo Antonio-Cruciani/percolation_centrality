@@ -3,6 +3,7 @@ function parallel_random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     n::Int64 = nv(g)
     ntasks = nthreads()
     diam_lb::Array{Array{Int64}} = [[0] for _ in 1:ntasks]
+    reachable_pairs::Array{Array{Int64}} = [[0] for _ in 1:ntasks]
     lb::Int64 = 0
     exact::Bool = false
     @info("Running (parallel) Random BFS algorithm")
@@ -26,22 +27,24 @@ function parallel_random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
             else
                 s = sample(1:n)
             end
-            _bfs!(s,g,diam_lb[t])
+            _bfs!(s,g,diam_lb[t],reachable_pairs[t])
         end
     end
-
+    rp::Int64 = 0
     for t in 1:ntasks
         if lb < diam_lb[t][1]
             lb = diam_lb[t][1]
         end
+        rp += reachable_pairs[t][1]
     end
-
-    
+    alpha::Float64 = n*rp/(sample_size*n*(n-1))
+    @info("Connectivity rate "*string(round(alpha;digits = 5)))
+    flush(stdout)
     return lb,time()-start_time
 end
 
 
-function _bfs!(s::Int64,g,diam::Array{Int64})
+function _bfs!(s::Int64,g,diam::Array{Int64},reachable_pairs::Array{Int64})
     n::Int64 = nv(g)
     q::Queue{Int64} = Queue{Int64}()
     dist::Array{Int64} = zeros(Int64,n)
@@ -57,6 +60,7 @@ function _bfs!(s::Int64,g,diam::Array{Int64})
         for v in outneighbors(g,w)
             if ball[v] == 0
                 dist[v] = dist[w] +1
+                reachable_pairs[1] += 1
                 if dist[v] > diam[1]
                     diam[1] = dist[v]
                 end

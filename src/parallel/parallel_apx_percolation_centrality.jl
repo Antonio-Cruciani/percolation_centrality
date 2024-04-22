@@ -670,7 +670,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
     flush(stdout)
-    max_sample::Float64 = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
+    max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
     if diam == 0
         max_sample = Inf
     end

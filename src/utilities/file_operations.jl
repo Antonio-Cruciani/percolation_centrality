@@ -109,7 +109,7 @@ function save_sample_size(nn::String,algo::String,ss::Int64)::nothing
     close(f)
 end
 
-function save_results_progressive_sampling(nn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,xi::Float64 = -1.0)
+function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,xi::Float64 = -1.0)
     if (length(c) > 0)
         mkpath("scores/" * nn * "/")
         append_centrality_values("scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
