@@ -212,3 +212,31 @@ function compute_xi(B,r)
     JuMP.optimize!(model)
     return(objective_value(model))
 end
+
+
+function empirical_variance(tilde_b::Array{Float64}, sample_size::Int64, v::Int64)::Float64
+    n::Int64 = div(length(tilde_b), sample_size)
+    variance::Float64 = 0
+    for i in 1:sample_size
+        for j in (i+1):sample_size
+            variance += (((tilde_b[(i-1)*n+v] - tilde_b[(j-1)*n+v]))^2)
+        end
+    end
+    return variance / (sample_size * (sample_size - 1))
+end
+
+function theoretical_error_bound(tilde_b::Array{Float64},tb::Array{Float64}, sample_size::Int64, eta::Float64)::Float64
+    n::Int64 = lastindex(tb)
+    errors::Array{Float64} = zeros(n)
+    Base.Threads.@threads for u in 1:n
+        variance::Float64 = 0.0
+        for i in 1:sample_size
+            variance += (tilde_b[(i-1)*n+u] - (tb[u]/sample_size))^2
+            #variance+= empirical_variance(tilde_b,sample_size,u)
+        end
+        variance = variance/(sample_size-1)
+       # variance = variance
+        errors[u] = sqrt(2 * variance * log(4 * n / eta) / sample_size) + 7 * log(4 * n / eta) / (3 * (sample_size - 1))
+    end
+    return maximum(errors)
+end

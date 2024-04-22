@@ -1,7 +1,7 @@
 include("src/PERC.jl")
 
 
-datasets = ["01_enron.txt"]
+datasets = ["01_email_enron.txt"]
 
 directed = false
 
