@@ -1,18 +1,37 @@
 include("src/PERC.jl")
 
-
-datasets = ["01_enron.txt"]
-
+# Undirected
+datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
 directed = false
 
 separator = "\t"
-normalized = true
+normalized = false
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
     perc = random_percolations(nv(g))
     ds_name = string(split(ds,".txt")[1])
     save_percolation_array(ds_name,perc)
+    @info("Computing Ground Truth percolation centrality for "*ds_name)
+    flush(stdout)
+    x = parallel_percolation_centrality(g,perc,normalized)
+    save_results(ds_name,"exact",x[1],x[2])
+end
+
+# Directed
+datasets = ["04_web_notredame.txt","05_wiki_talk.txt","06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt"]
+directed = true
+
+separator = "\t"
+normalized = false
+for ds in datasets
+    gf = "graphs/"*ds
+    g = load_graph(gf,directed,separator)
+    perc = random_percolations(nv(g))
+    ds_name = string(split(ds,".txt")[1])
+    save_percolation_array(ds_name,perc)
+    @info("Computing Ground Truth percolation centrality for "*ds_name)
+    flush(stdout)
     x = parallel_percolation_centrality(g,perc,normalized)
     save_results(ds_name,"exact",x[1],x[2])
 end

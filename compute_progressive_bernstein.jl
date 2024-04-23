@@ -17,8 +17,8 @@ for ds in datasets
     i = 1
     for epsilon in epsilon_list
         for _ in 1:run
-            x = parallel_estimate_percolation_centrality_fixed_sample_size(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"fixed_ss",x[1],x[2],x[3],ss_save[i],epsilon)
+            x = parallel_estimate_percolation_centrality_bernstein(g,perc,epsilon,delta)
+            save_results_progressive_sampling(ds_name,"bernstein",x[1],x[3],x[5],ss_save[i],epsilon)
         end
         i+=1
     end
