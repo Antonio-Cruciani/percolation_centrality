@@ -64,6 +64,7 @@ function load_graph(file_name::String,directed::Bool = true,sep::String = " ")
 	@info("#Edges "*string(ne(g)))
 	@info("Directed ? "*string(directed))
     @info("Loading time "*string(loading_time)*" seconds")
+    flush(stderr)
 	return g
 end
 
@@ -76,6 +77,7 @@ function print_stats(g; graph_name="anonymous")
     @info("Number of edges " * string(length(ne(g))))
     @info("Is the graph directed? " * string(is_directed(g)))
     @info("====================================================")
+    flush(stderr)
 end
 
 

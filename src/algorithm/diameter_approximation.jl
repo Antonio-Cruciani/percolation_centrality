@@ -13,7 +13,7 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     if sample_size == 0
         sample_size = n
         @info("Computing Exact Diameter")
-        flush(stdout)
+        flush(stderr)
     end
     for i in 1:sample_size
         if sample_size == n
@@ -45,6 +45,6 @@ function random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     end
     alpha::Float64 = n*reachable_pairs/(sample_size*n*(n-1))
     @info("Connectivity rate "*string(round(alpha;digits = 5)))
-    flush(stdout)
+    flush(stderr)
     return diam_lb,time()-start_time
 end

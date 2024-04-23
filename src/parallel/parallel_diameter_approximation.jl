@@ -12,10 +12,10 @@ function parallel_random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
         sample_size = n
         exact = true
         @info("Computing Exact Diameter")
-        flush(stdout)
+        flush(stderr)
     else
         @info("Computing Approximated Diameter")
-        flush(stdout)
+        flush(stderr)
     end
     task_size = cld(sample_size, ntasks)
     vs_active = [i for i in 1:sample_size]
@@ -39,7 +39,7 @@ function parallel_random_bfs(g,sample_size::Int64)::Tuple{Int64,Float64}
     end
     alpha::Float64 = n*rp/(sample_size*n*(n-1))
     @info("Connectivity rate "*string(round(alpha;digits = 5)))
-    flush(stdout)
+    flush(stderr)
     return lb,time()-start_time
 end
 

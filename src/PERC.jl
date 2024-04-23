@@ -6,6 +6,7 @@ using JuMP
 using NLopt
 using LaTeXStrings
 using Latexify
+using Logging
 include("graph/graph.jl")
 include("utilities/thread_tools.jl")
 include("utilities/stats.jl")

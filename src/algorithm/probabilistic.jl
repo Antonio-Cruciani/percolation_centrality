@@ -30,7 +30,7 @@ function upper_bound_average_diameter(delta::Float64,diam::Int64,tdd::Array{Int6
         @info("Average diameter UB (Bernstein) "*string(average_diam_ub_b))
         @info("Average diameter UB (Emp-Bernstein) "*string(average_diam_ub_eb))
         @info("Variance estimate average diameter "*string(var_estimate_diam))
-        flush(stdout)
+        flush(stderr)
     end
     if diam -2 >0
         return min(avg_diam_upperbound,diam-2)
@@ -120,11 +120,11 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
             
             omega[1] = last_stopping_samples
             @info("New stopping condition update, last stopping samples "*string(last_stopping_samples))
-            flush(stdout)
+            flush(stderr)
         end
         if max_num_samples <= num_samples
             @info("New stopping condition TRUE")
-            flush(stdout)
+            flush(stderr)
         end
     end
     
@@ -168,10 +168,10 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
         @info("c-Monte Carlo R.A. STOPS with ξ : "*string(sup_eps))
         @info("c-Monte Carlo R.A. STOPS at iteration : "*string(iteration))
         @info("c-Monte Carlo R.A. STOPS at sample size : "*string(num_samples))
-        flush(stdout)
+        flush(stderr)
     else
         @info("c-Monte Carlo R.A. ξ "*string(sup_eps)*" target ε  "*string(eps) )
-        flush(stdout)
+        flush(stderr)
     end
     has_to_stop[1]= (sup_eps <= eps)
     return nothing

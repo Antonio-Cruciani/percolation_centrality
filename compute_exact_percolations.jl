@@ -13,7 +13,8 @@ for ds in datasets
     ds_name = string(split(ds,".txt")[1])
     save_percolation_array(ds_name,perc)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
-    flush(stdout)
+    flush(stderr)
+    
     x = parallel_percolation_centrality(g,perc,normalized)
     save_results(ds_name,"exact",x[1],x[2])
 end
@@ -31,7 +32,7 @@ for ds in datasets
     ds_name = string(split(ds,".txt")[1])
     save_percolation_array(ds_name,perc)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
-    flush(stdout)
+    flush(stderr)
     x = parallel_percolation_centrality(g,perc,normalized)
     save_results(ds_name,"exact",x[1],x[2])
 end

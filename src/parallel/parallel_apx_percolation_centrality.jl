@@ -14,7 +14,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     ntasks = nthreads()
     sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
     run_perc::Bool = true
@@ -48,11 +48,11 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     # Diameter approximation using Propagate/RandomBFS
     # Using Random BFS
     @info("Approximating diameter using Random BFS algorithm")
-    flush(stdout)
+    flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stdout)
+    flush(stderr)
     # Sample size related
     omega::Float64 = 1000
     max_num_samples::Float64 = 0.0
@@ -60,7 +60,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     tau =  trunc(Int64,max(tau,2*(diam -1) * (log(1. / delta))) )
     start_time_bootstrap::Float64 = time()
     @info("Bootstrap phase "*string(tau)*" iterations")
-    flush(stdout)
+    flush(stderr)
     new_diam_estimate::Array{Array{Int64}} = [[diam] for _ in 1:ntasks]
     final_new_diam_estimate::Int64 = diam
     task_size = cld(tau, ntasks)
@@ -117,11 +117,11 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
 
     #betweenness = betweenness .* [1/tau]
     @info("Empirical peeling phase:")
-    flush(stdout)
+    flush(stderr)
     if changed
         @info("Diameter estimation refined from "*string(old_diam)*" to "*string(final_new_diam_estimate[1]))
         diam = final_new_diam_estimate[1]
-        flush(stdout)
+        flush(stderr)
     end
     for i in 1:n
         max_perc = max(max_perc,final_percolation_centrality[i]/tau)
@@ -148,7 +148,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     top1bc_upper_bound::Float64 = upper_bound_top_1_bc(max_perc,delta/8,tau)
     wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(max_wv/tau,delta/8,tau)
     @info("Average shortest path length (upper bound) "*string(avg_diam_ub))
-    flush(stdout)
+    flush(stderr)
     max_num_samples = upper_bound_samples(top1bc_upper_bound,wimpy_var_upper_bound,avg_diam_ub,epsilon,delta/2 ,false)
     omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
     @info("Maximum number of samples "*string(trunc(Int64,floor(max_num_samples)))*" VC Bound "*string(trunc(Int64,floor(omega))))
@@ -156,7 +156,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     #println("Sup bc. estimation "*string(max_perc))
 
     @info("Sup empirical wimpy variance "*string(max_wv/tau))
-    flush(stdout)
+    flush(stderr)
     omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
     if max_num_samples > 0
         omega = max_num_samples
@@ -170,7 +170,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     finish_bootstrap = string(round(time() - start_time_bootstrap; digits=4))
     @info("Bootstrap completed in "*finish_bootstrap)
     @info("Inferring initial sample size for the geometric sampler")
-    flush(stdout)
+    flush(stderr)
     num_samples_bs::Float64 = 0.0
     while first_sample_upper - first_sample_lower> 10
         num_samples_bs = (first_sample_upper+first_sample_lower)÷2
@@ -189,7 +189,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
         first_stopping_samples = trunc(Int64,floor(last_stopping_samples/4))
         @info("Initial sample size dropped to "*string(first_stopping_samples))
     end
-    flush(stdout)
+    flush(stderr)
     # Freeing all the arrays
     percolation_centrality = Array{Array{Float64}}([zeros(Float64,n) for _ in 1:ntasks])
     final_percolation_centrality = Array{Float64}(zeros(Float64,n))
@@ -227,7 +227,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
             finish_partial = string(round(time() - start_time; digits=4))
             @info("Completed, sampled "*string(num_samples)*"/"*string(omega)* " couples in "*finish_partial)
             @info("---------------------------------------------------------------------------------------------------")
-            flush(stdout)
+            flush(stderr)
         end
         if !has_to_stop & (num_samples < last_stopping_samples)&(num_samples >= next_stopping_samples)
             changed = false
@@ -275,7 +275,7 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
             if changed
                 @info("Diameter estimation refined from "*string(old_diam)*" to "*string(final_new_diam_estimate[1]))
                 diam = final_new_diam_estimate[1]
-                flush(stdout)
+                flush(stderr)
             end
             tmp_omega = Array{Float64}([omega])
             tmp_has_to_stop = Array{Bool}([false])
@@ -285,21 +285,21 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
             has_to_stop = tmp_has_to_stop[1]
             if has_to_stop
                 @info("Progressive sampler converged!")
-                flush(stdout)
+                flush(stderr)
             else
                 prev_stopping_samples = next_stopping_samples
                 next_stopping_samples,iteration_index = get_next_stopping_sample(next_stopping_samples,iteration_index )
                 @info("Increasing sample size to "*string(next_stopping_samples))
-                flush(stdout)
+                flush(stderr)
             end
             @info("---------------------------------------------------------------------------------------------------")
-            flush(stdout)
+            flush(stderr)
         end
     end
     final_percolation_centrality = reduce(+,percolation_centrality)
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
-    flush(stdout)
+    flush(stderr)
     return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time
 
 end
@@ -322,7 +322,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta)*" Alpha "*string(alpha_sampling)*" MC Trials "*string(mc_trials)*" Empirical peeling param. "*string(empirical_peeling_a))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     ntasks = nthreads()
     sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
     run_perc::Bool = true
@@ -356,11 +356,11 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     # Diameter approximation using Propagate/RandomBFS
     # Using Random BFS
     @info("Approximating diameter using Random BFS algorithm")
-    flush(stdout)
+    flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stdout)
+    flush(stderr)
     # Sample size related
     omega::Float64 = 1000
     max_num_samples::Float64 = 0.0
@@ -368,7 +368,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     tau =  trunc(Int64,max(tau,2*(diam -1) * (log(1. / delta))) )
     start_time_bootstrap::Float64 = time()
     @info("Bootstrap phase "*string(tau)*" iterations")
-    flush(stdout)
+    flush(stderr)
     #new_diam_estimate::Array{Array{Int64}} = [[diam] for _ in 1:ntasks]
     final_new_diam_estimate::Array{Int64} = [diam]
     lk::ReentrantLock = ReentrantLock()
@@ -432,11 +432,11 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
 
     #betweenness = betweenness .* [1/tau]
     @info("Empirical peeling phase:")
-    flush(stdout)
+    flush(stderr)
     if changed
         @info("Diameter estimation refined from "*string(old_diam)*" to "*string(final_new_diam_estimate[1]))
         diam = final_new_diam_estimate[1]
-        flush(stdout)
+        flush(stderr)
     end
     for i in 1:n
         max_perc = max(max_perc,final_percolation_centrality[i]/tau)
@@ -463,7 +463,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     top1bc_upper_bound::Float64 = upper_bound_top_1_bc(max_perc,delta/8,tau)
     wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(max_wv/tau,delta/8,tau)
     @info("Average shortest path length (upper bound) "*string(avg_diam_ub))
-    flush(stdout)
+    flush(stderr)
     max_num_samples = upper_bound_samples(top1bc_upper_bound,wimpy_var_upper_bound,avg_diam_ub,epsilon,delta/2 ,false)
     omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
     @info("Maximum number of samples "*string(trunc(Int64,floor(max_num_samples)))*" VC Bound "*string(trunc(Int64,floor(omega))))
@@ -471,7 +471,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     #println("Sup bc. estimation "*string(max_perc))
 
     @info("Sup empirical wimpy variance "*string(max_wv/tau))
-    flush(stdout)
+    flush(stderr)
     omega = 0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta))
     if max_num_samples > 0
         omega = max_num_samples
@@ -485,7 +485,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     finish_bootstrap = string(round(time() - start_time_bootstrap; digits=4))
     @info("Bootstrap completed in "*finish_bootstrap)
     @info("Inferring initial sample size for the geometric sampler")
-    flush(stdout)
+    flush(stderr)
     num_samples_bs::Float64 = 0.0
     while first_sample_upper - first_sample_lower> 10
         num_samples_bs = (first_sample_upper+first_sample_lower)÷2
@@ -504,7 +504,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
         first_stopping_samples = trunc(Int64,floor(last_stopping_samples/4))
         @info("Initial sample size dropped to "*string(first_stopping_samples))
     end
-    flush(stdout)
+    flush(stderr)
     # Freeing all the arrays
     #percolation_centrality = Array{Array{Float64}}([zeros(Float64,n) for _ in 1:ntasks])
     final_percolation_centrality = Array{Float64}(zeros(Float64,n))
@@ -542,7 +542,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
             finish_partial = string(round(time() - start_time; digits=4))
             @info("Completed, sampled "*string(num_samples)*"/"*string(omega)* " couples in "*finish_partial)
             @info("---------------------------------------------------------------------------------------------------")
-            flush(stdout)
+            flush(stderr)
         end
         if !has_to_stop & (num_samples < last_stopping_samples)&(num_samples >= next_stopping_samples)
             changed = false
@@ -596,7 +596,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
             if changed
                 @info("Diameter estimation refined from "*string(old_diam)*" to "*string(final_new_diam_estimate[1]))
                 diam = final_new_diam_estimate[1]
-                flush(stdout)
+                flush(stderr)
             end
             tmp_omega = Array{Float64}([omega])
             tmp_has_to_stop = Array{Bool}([false])
@@ -606,21 +606,21 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
             has_to_stop = tmp_has_to_stop[1]
             if has_to_stop
                 @info("Progressive sampler converged!")
-                flush(stdout)
+                flush(stderr)
             else
                 prev_stopping_samples = next_stopping_samples
                 next_stopping_samples,iteration_index = get_next_stopping_sample(next_stopping_samples,iteration_index )
                 @info("Increasing sample size to "*string(next_stopping_samples))
-                flush(stdout)
+                flush(stderr)
             end
             @info("---------------------------------------------------------------------------------------------------")
-            flush(stdout)
+            flush(stderr)
         end
     end
     #final_percolation_centrality = reduce(+,percolation_centrality)
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
-    flush(stdout)
+    flush(stderr)
     return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time
 
 end
@@ -640,13 +640,13 @@ function parallel_estimate_percolation_centrality_bernstein(g,percolation_states
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     ntasks = nthreads()
     if initial_sample == 0
         @info("Inferring the size of the first sample in the schedule")
         initial_sample = trunc(Int64,floor((1+8*epsilon + sqrt(1+16*epsilon)*log(6/delta))/(4*epsilon*epsilon)))
         @info("The size of the first sample in the schedule is "*string(initial_sample))
-        flush(stdout)
+        flush(stderr)
     end
 
     local_B::Array{Dict{Float64,Float64}} =  [Dict{Float64,Float64}() for i in 1:ntasks]
@@ -665,17 +665,17 @@ function parallel_estimate_percolation_centrality_bernstein(g,percolation_states
     tmp_perc_states::Array{Float64} = copy(percolation_states)
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     @info("Approximating diameter using Random BFS algorithm")
-    flush(stdout)
+    flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stdout)
+    flush(stderr)
     max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
     if diam == 0
         max_sample = Inf
     end
     @info("Maximum sample size "*string(trunc(Int64,max_sample)))
-    flush(stdout)
+    flush(stderr)
     while keep_sampling
         k+=1
         if (k >= 2)
@@ -695,7 +695,7 @@ function parallel_estimate_percolation_centrality_bernstein(g,percolation_states
         _reduce_arrays_bernstein!(local_tilde_b,local_percolation,final_tilde_b,final_percolation)
         xi = theoretical_error_bound(final_tilde_b,final_percolation,sample_size_schedule[j],delta/2^k)
         @info("Empirical Bernstein Bound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j])*" in "*string(round(time()-start_time;digits = 4)))
-        flush(stdout)
+        flush(stderr)
         if xi <= epsilon || sample_size_schedule[j] >= max_sample
             keep_sampling = false
         else
@@ -725,13 +725,13 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     ntasks = nthreads()
     if initial_sample == 0
         @info("Inferring the size of the first sample in the schedule")
         initial_sample = trunc(Int64,floor((1+8*epsilon + sqrt(1+16*epsilon)*log(6/delta))/(4*epsilon*epsilon)))
         @info("The size of the first sample in the schedule is "*string(initial_sample))
-        flush(stdout)
+        flush(stderr)
     end
 
     local_B::Array{Dict{Float64,Float64}} =  [Dict{Float64,Float64}() for i in 1:ntasks]
@@ -751,17 +751,17 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     tmp_perc_states::Array{Float64} = copy(percolation_states)
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     @info("Approximating diameter using Random BFS algorithm")
-    flush(stdout)
+    flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stdout)
+    flush(stderr)
     max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
     if diam == 0
         max_sample = Inf
     end
     @info("Maximum sample size "*string(trunc(Int64,max_sample)))
-    flush(stdout)
+    flush(stderr)
     while keep_sampling
         k+=1
         if (k >= 2)
@@ -973,7 +973,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     ntasks = nthreads()
     start_time::Float64 = time()
     
@@ -986,14 +986,14 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
     tmp_perc_states::Array{Float64} = copy(percolation_states)
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     @info("Approximating diameter using Random BFS algorithm")
-    flush(stdout)
+    flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
     finish_diam::String = string(round(time_diam; digits=4))
     @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stdout)
+    flush(stderr)
     max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
     @info("Maximum sample size "*string(max_sample))
-    flush(stdout)
+    flush(stderr)
     task_size = cld(max_sample, ntasks)
     vs_active = [i for i in 1:max_sample]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:max_sample, task_size))
@@ -1014,7 +1014,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
 
     finish_time::Float64 = time()-start_time
     @info("Completed! Sampled "*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
-    flush(stdout)
+    flush(stderr)
     return final_percolation_centrality.*[1/max_sample],max_sample,finish_time
 end
 

@@ -9,9 +9,9 @@ function percolation_centrality(g,percolation_states::Array{Float64},normalized:
     @info("Minimum Percolated state "*string(minimum(percolation_states)))
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
     @info("---------------------------------------------------------------------------------------------------")
-    flush(stdout)
+    flush(stderr)
     @info("Computing percolation centrality")
-    flush(stdout)
+    flush(stderr)
     start_time::Float64 = time()
     n::Int64 = nv(g)
     delta::Array{Float64} = zeros(Float64,n)
@@ -71,6 +71,6 @@ function percolation_centrality(g,percolation_states::Array{Float64},normalized:
     end
     finish_time::Float64 = time()-start_time
     @info("Percolation centrality computed in "*string(finish_time))
-    flush(stdout)
+    flush(stderr)
     return percolation,finish_time
 end
