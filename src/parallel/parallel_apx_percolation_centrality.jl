@@ -710,7 +710,7 @@ end
 
 
 
-function parallel_estimate_percolation_centrality_era(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,initial_sample::Int64 = 0,geo::Float64 = 1.2,sample_size_diam::Int64 = 256 )
+function parallel_estimate_percolation_centrality_era(g,percolation_states::Array{Float64},epsilon::Float64,delta::Float64,initial_sample::Int64 = 0,geo::Float64 = 1.2,sample_size_diam::Int64 = 256,vc_upperbound::Bool = false )
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
@@ -749,19 +749,26 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     sample_size_schedule::Array{Int64} = [0,initial_sample]
     xi::Float64 = 0
     tmp_perc_states::Array{Float64} = copy(percolation_states)
+    diam::Int64 = 0
     percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
-    @info("Approximating diameter using Random BFS algorithm")
-    flush(stderr)
-    diam,time_diam = parallel_random_bfs(g,sample_size_diam)
-    finish_diam::String = string(round(time_diam; digits=4))
-    @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
-    flush(stderr)
-    max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
-    if diam == 0
-        max_sample = Inf
+    if vc_upperbound
+        @info("Approximating diameter using Random BFS algorithm")
+        flush(stderr)
+        diam,time_diam = parallel_random_bfs(g,sample_size_diam)
+        finish_diam::String = string(round(time_diam; digits=4))
+        @info("Estimated diameter "*string(diam)*" in "*finish_diam*" seconds")
+        flush(stderr)
+        max_sample::Int64 = trunc(Int64,0.5/epsilon/epsilon * (log2(diam-1)+1+log(2/delta)))
+        @info("VC-Upperbound on the maximum sample size "*string(max_sample))
+        flush(stderr)
     end
-    @info("Maximum sample size "*string(trunc(Int64,max_sample)))
-    flush(stderr)
+    if diam == 0
+        max_sample = typemax(Int64)
+        @info("Deterministic ERA Upperbound on the maximum sample size ")
+        flush(stderr)
+           
+    end
+    
     while keep_sampling
         k+=1
         if (k >= 2)
