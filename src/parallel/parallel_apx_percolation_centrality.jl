@@ -497,6 +497,9 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
         end
     end
     first_stopping_samples = trunc(Int64,floor(num_samples_bs))
+    if first_stopping_samples == 0
+        first_stopping_samples = 10
+    end
     last_stopping_samples = trunc(Int64,floor(omega))
     @info("Maximum number of iterations "*string(last_stopping_samples))
     @info("Initial sample size "*string(first_stopping_samples))
