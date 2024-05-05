@@ -797,6 +797,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
             xi = Inf
         end
         @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]))
+        flush(stderr)
         if xi <= epsilon || sample_size_schedule[j] >= max_sample
             keep_sampling = false
         else
@@ -807,6 +808,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     final_B_1 = reduce(+,local_B_1) .*[1/sample_size_schedule[end]]
     finish_time::Float64 = time()-start_time
     @info("Converged! Sampled "*string(sample_size_schedule[end])*"/"*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
+    flush(stderr)
     return final_B_1,sample_size_schedule,max_sample,xi,finish_time
 end
 
