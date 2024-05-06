@@ -23,7 +23,7 @@ for ds in datasets
         for _ in 1:run
             @info("Computing Apx percolation centrality for "*ds_name)
             flush(stderr)
-            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta)
+            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta,0,1.2,256,true)
             save_results_progressive_sampling(ds_name,"era",x[1],x[2][end],x[5],ss_save[i],x[4])
         end
         i+=1
@@ -48,7 +48,7 @@ for ds in datasets
         for _ in 1:run
             @info("Computing Apx percolation centrality for "*ds_name)
             flush(stderr)
-            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta)
+            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta,0,1.2,256,true)
             save_results_progressive_sampling(ds_name,"era",x[1],x[2][end],x[5],ss_save[i],x[4])
         end
         i+=1
