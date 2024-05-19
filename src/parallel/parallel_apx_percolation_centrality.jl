@@ -788,6 +788,8 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
             end
         end
         sampled_so_far += sample_i
+        @info("Checking stopping condition")
+        flush(stderr)
         B_vectorized = reduce_dictionary(local_B)
         if length(B_vectorized)>0
             omega = compute_xi(B_vectorized,sample_size_schedule[j])
@@ -796,7 +798,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
         else
             xi = Inf
         end
-        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]))
+        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]) *" Next Sample size "*string(trunc(Int,geo^(k+1)*sample_size_schedule[2])))
         flush(stderr)
         if xi <= epsilon || sample_size_schedule[j] >= max_sample
             keep_sampling = false
