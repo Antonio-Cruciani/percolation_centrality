@@ -788,8 +788,6 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
             end
         end
         sampled_so_far += sample_i
-        @info("Checking stopping condition")
-        flush(stderr)
         B_vectorized = reduce_dictionary(local_B)
         if length(B_vectorized)>0
             omega = compute_xi(B_vectorized,sample_size_schedule[j])
@@ -798,7 +796,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
         else
             xi = Inf
         end
-        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]) *" Next Sample size "*string(trunc(Int,geo^(k+1)*sample_size_schedule[2])))
+        @info("ERA Upperbound "*string(xi)*" Target SD "*string(epsilon)*" #Sampled pairs "*string(sample_size_schedule[j]) *" in "*string(round(time()-start_time;digits = 4))*" Next Sample size "*string(trunc(Int,geo^(k+1)*sample_size_schedule[2])))
         flush(stderr)
         if xi <= epsilon || sample_size_schedule[j] >= max_sample
             keep_sampling = false
@@ -890,7 +888,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
     z::Int64 = sample(1:n)
     w::Int64 = 0
     d_z_min::Float64 = Inf
-    q_backtrack::Queue{Int64} = Queue{Int64}()
+    q_backtrack::Stack{Int64} = Stack{Int64}()
     while (s == z)
         z = sample(1:n)
     end
@@ -918,6 +916,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                     end
                     push!(pred[v],w)
                     enqueue!(q,v)
+                    push!(q_backtrack,w)
                 elseif (dist[v] == dist[w] + 1)
                     n_paths[v] += n_paths[w]
                     push!(pred[v],w)
@@ -955,11 +954,8 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
    end
    =#
    if d_z_min != Inf
-
-        w = z
-        enqueue!(q_backtrack,w)
         while length(q_backtrack) != 0
-            w = dequeue!(q_backtrack)
+            w != pop!(q_backtrack)
             if w != s && w != z
                 summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
                 # Updating phase
@@ -980,12 +976,44 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                 B_2[w] += summand^2
                 
             end
-            if w != s
+
+        end
+        #=
+        backtracked::Array{Int16} = zeros(Int16,n)
+        w = z
+        enqueue!(q_backtrack,w)
+        while length(q_backtrack) != 0
+            w = dequeue!(q_backtrack)
+            backtracked[w] = 1
+            if w != s && w != z
+                summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+                # Updating phase
+                b = B_2[w]
+                b_1 = b + summand^2
+                if !haskey(B,b_1) 
+                    B[b_1] = 1
+                else
+                    B[b_1] += 1
+                end
+                if b > 0 && B[b] >= 1
+                    B[b] -= 1
+                end
+                if b > 0 && B[b] == 0
+                    delete!(B, b)
+                end
+                B_1[w] += summand
+                B_2[w] += summand^2
+                
+            end
+            if w != s 
                 for p in pred[w]
-                    enqueue!(q_backtrack,p)
+                    if backtracked[p] == 0
+                        enqueue!(q_backtrack,p)
+                    end
                 end
             end
         end
+        =#
 
     end
 
