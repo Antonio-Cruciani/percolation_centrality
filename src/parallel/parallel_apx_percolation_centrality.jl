@@ -916,7 +916,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                     end
                     push!(pred[v],w)
                     enqueue!(q,v)
-                    push!(q_backtrack,w)
+                    push!(q_backtrack,v)
                 elseif (dist[v] == dist[w] + 1)
                     n_paths[v] += n_paths[w]
                     push!(pred[v],w)
@@ -953,7 +953,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
         end
    end
    =#
-   if d_z_min != Inf
+   if ball[z] == 1
         while length(q_backtrack) != 0
             w != pop!(q_backtrack)
             if w != s && w != z
