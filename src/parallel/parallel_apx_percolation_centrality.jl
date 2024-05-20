@@ -910,9 +910,11 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                         if dist[v] < d_z_min
                             d_z_min = dist[v]
                         end
+                        #=
                         if length(q_backtrack) == 0
                             enqueue!(q_backtrack,z)
                         end
+                        =#
                     end
                     push!(pred[v],w)
                     enqueue!(q,v)
@@ -925,6 +927,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
         end
     end
     #backtrack
+    #=
    while length(q_backtrack)!=0
         w = dequeue!(q_backtrack)
         if w != s && w != z
@@ -950,7 +953,42 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
             enqueue!(q_backtrack,p)
         end
    end
-   
+   =#
+   if d_z_min != Inf
+    println("Starting backtracking")
+
+        w = z
+        enqueue!(q_backtrack,w)
+        while length(q_backtrack) != 0
+            w = dequeue!(q_backtrack)
+            if w != s && w != z
+                summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+                # Updating phase
+                b = B_2[w]
+                b_1 = b + summand^2
+                if !haskey(B,b_1) 
+                    B[b_1] = 1
+                else
+                    B[b_1] += 1
+                end
+                if b > 0 && B[b] >= 1
+                    B[b] -= 1
+                end
+                if b > 0 && B[b] == 0
+                    delete!(B, b)
+                end
+                B_1[w] += summand
+                B_2[w] += summand^2
+                for p in pred[w]
+                    enqueue!(q_backtrack,p)
+                end
+            end
+            
+        end
+        println("End backtracking")
+
+    end
+
 
    return nothing
 end
