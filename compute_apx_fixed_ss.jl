@@ -2,8 +2,8 @@ include("src/PERC.jl")
 
 
 #Common parameters
-epsilon_list = [0.1,0.07,0.05,0.01,0.005]
-ss_save = [1,2,3,4,5]
+epsilon_list = [0.07,0.05,0.01,0.005]
+ss_save = [2,3,4,5]
 delta = 0.1
 run = 10
 
@@ -30,7 +30,9 @@ for ds in datasets
 end
 =#
 # Directed
-datasets = ["11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+#datasets = ["11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+datasets = ["08_web_berkstan.txt"]
+
 directed = true
 separator = "\t"
 
