@@ -955,7 +955,6 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
    end
    =#
    if d_z_min != Inf
-    println("Starting backtracking")
 
         w = z
         enqueue!(q_backtrack,w)
@@ -979,13 +978,14 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                 end
                 B_1[w] += summand
                 B_2[w] += summand^2
+                
+            end
+            if w != s
                 for p in pred[w]
                     enqueue!(q_backtrack,p)
                 end
             end
-            
         end
-        println("End backtracking")
 
     end
 
