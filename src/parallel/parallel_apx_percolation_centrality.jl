@@ -955,34 +955,44 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
    =#
    if ball[z] == 1
         q_backtrack::Queue{Int64} = Queue{Int64}()
+        queued::Array{Int16} = zeros(Int16,n)
+        #number_of_sps_to_target::Dict{Int64,Int128} = Dict{Int64,Int128}()
+        number_of_sps_to_target::Array{UInt128} = zeros(UInt128,n)
+        number_of_paths_through_curr::UInt128 = 0
         for p in pred[z]
             enqueue!(q_backtrack,p)
+            number_of_sps_to_target[p] = 1
+            queued[p] = 1
         end
         w = dequeue!(q_backtrack)
         while w != s
-            if w != s && w != z
-                summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
-                # Updating phase
-                b = B_2[w]
-                b_1 = b + summand^2
-                if !haskey(B,b_1) 
-                    B[b_1] = 1
-                else
-                    B[b_1] += 1
-                end
-                if b > 0 && B[b] >= 1
-                    B[b] -= 1
-                end
-                if b > 0 && B[b] == 0
-                    delete!(B, b)
-                end
-                B_1[w] += summand
-                B_2[w] += summand^2
-                
+            number_of_paths_through_curr = n_paths[w] * number_of_sps_to_target[w]
+            summand = (number_of_paths_through_curr/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
+            # Updating phase
+            b = B_2[w]
+            b_1 = b + summand^2
+            if !haskey(B,b_1) 
+                B[b_1] = 1
+            else
+                B[b_1] += 1
             end
+            if b > 0 && B[b] >= 1
+                B[b] -= 1
+            end
+            if b > 0 && B[b] == 0
+                delete!(B, b)
+            end
+            B_1[w] += summand
+            B_2[w] += summand^2
+            
+            
 
             for p in pred[w]
-                enqueue!(q_backtrack,p)
+                if queued[p] == 0
+                    enqueue!(q_backtrack,p)
+                    queued[p] = 1
+                end
+                number_of_sps_to_target[p] += number_of_sps_to_target[w]
             end
             w  = dequeue!(q_backtrack)
         end
