@@ -888,7 +888,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
     z::Int64 = sample(1:n)
     w::Int64 = 0
     d_z_min::Float64 = Inf
-    q_backtrack::Stack{Int64} = Stack{Int64}()
+    #q_backtrack::Stack{Int64} = Stack{Int64}()
     while (s == z)
         z = sample(1:n)
     end
@@ -916,7 +916,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                     end
                     push!(pred[v],w)
                     enqueue!(q,v)
-                    push!(q_backtrack,v)
+                    #push!(q_backtrack,v)
                 elseif (dist[v] == dist[w] + 1)
                     n_paths[v] += n_paths[w]
                     push!(pred[v],w)
@@ -954,8 +954,12 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
    end
    =#
    if ball[z] == 1
-        while length(q_backtrack) != 0
-            w != pop!(q_backtrack)
+        q_backtrack::Queue{Int64} = Queue{Int64}()
+        for p in pred[z]
+            enqueue!(q_backtrack,p)
+        end
+        w = dequeue!(q_backtrack)
+        while w != s
             if w != s && w != z
                 summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
                 # Updating phase
@@ -977,6 +981,10 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
                 
             end
 
+            for p in pred[w]
+                enqueue!(q_backtrack,p)
+            end
+            w  = dequeue!(q_backtrack)
         end
         #=
         backtracked::Array{Int16} = zeros(Int16,n)
