@@ -5,6 +5,7 @@ using Base.Threads
 using JuMP
 using NLopt
 using Logging
+using Random
 include("graph/graph.jl")
 include("utilities/thread_tools.jl")
 include("utilities/stats.jl")

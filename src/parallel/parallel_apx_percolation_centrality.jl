@@ -1059,6 +1059,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
     vs_active = [i for i in 1:max_sample]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:max_sample, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
+             Random.seed!(1234 + t)
             _parallel_sz_bfs_fss!(g,percolation_states,percolation_data,percolation_centrality[t])
         end
     end
