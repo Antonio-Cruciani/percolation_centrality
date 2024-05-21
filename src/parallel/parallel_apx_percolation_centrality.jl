@@ -996,43 +996,6 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
             end
             w  = dequeue!(q_backtrack)
         end
-        #=
-        backtracked::Array{Int16} = zeros(Int16,n)
-        w = z
-        enqueue!(q_backtrack,w)
-        while length(q_backtrack) != 0
-            w = dequeue!(q_backtrack)
-            backtracked[w] = 1
-            if w != s && w != z
-                summand = (n_paths[w]/n_paths[z]) *(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][w])  
-                # Updating phase
-                b = B_2[w]
-                b_1 = b + summand^2
-                if !haskey(B,b_1) 
-                    B[b_1] = 1
-                else
-                    B[b_1] += 1
-                end
-                if b > 0 && B[b] >= 1
-                    B[b] -= 1
-                end
-                if b > 0 && B[b] == 0
-                    delete!(B, b)
-                end
-                B_1[w] += summand
-                B_2[w] += summand^2
-                
-            end
-            if w != s 
-                for p in pred[w]
-                    if backtracked[p] == 0
-                        enqueue!(q_backtrack,p)
-                    end
-                end
-            end
-        end
-        =#
-
     end
 
 
@@ -1134,7 +1097,7 @@ function _parallel_sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_
     path::Array{Int64} = Array{Int64}([])
     q_backtrack::Queue{Int64} = Queue{Int64}()
     while (s == z)
-        z = sample(1:n)
+        z = sample(1:nv(g))
     end
    
     enqueue!(q,s)

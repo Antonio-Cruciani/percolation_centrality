@@ -754,9 +754,9 @@ function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_central
 end
 
 function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}})
-    tot_weight::UInt64 = n_paths[w]
-    random_pred::Int64 = 0
-    cur_pred::Int64 = 0
+    tot_weight::UInt128 = n_paths[w]
+    random_pred::UInt128 = 0
+    cur_pred::UInt128 = 0
     v::Int64 = 0
     if (w == s || w == z)
         return nothing
