@@ -45,7 +45,8 @@ function load_graph(file_name::String,directed::Bool = true,sep::String = " ")
     close(f)
 
     g = SimpleGraph()
-    n_vertices::Int64 = maximum(collect(keys(file_id_to_graph_id)))
+    #n_vertices::Int64 = maximum(collect(keys(file_id_to_graph_id)))
+    n_vertices::Int64 = maximum(collect(values(file_id_to_graph_id)))
     if directed
         g = SimpleDiGraph(n_vertices)
     else
