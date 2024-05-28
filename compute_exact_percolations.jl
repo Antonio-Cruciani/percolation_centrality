@@ -23,7 +23,8 @@ end
 =#
 # Directed
 #datasets = ["11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt","13_soc_pokec.txt","05_wiki_talk.txt"]
-datasets = ["06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt","13_soc_pokec.txt","05_wiki_talk.txt"]
+#datasets = ["06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt","13_soc_pokec.txt","05_wiki_talk.txt"]
+datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt"]
 
 directed = true
 

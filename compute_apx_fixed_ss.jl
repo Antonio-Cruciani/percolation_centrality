@@ -31,7 +31,7 @@ end
 =#
 # Directed
 #datasets = ["11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
-datasets = ["08_web_berkstan.txt"]
+datasets =  ["15_cit_hepph.txt","14_p2p_gnutella31.txt"]
 
 directed = true
 separator = "\t"
@@ -51,6 +51,7 @@ for ds in datasets
     end
 end
 
+#=
 epsilon_list = [0.001,0.0005]
 ss_save = [6,7]
 
@@ -97,3 +98,5 @@ for ds in datasets
         i+=1
     end
 end
+
+=#
