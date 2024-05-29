@@ -1,13 +1,14 @@
 include("src/PERC.jl")
 
 #Common parameters
-epsilon_list = [0.1,0.07,0.05,0.01,0.005,0.001,0.0005]
-ss_save = [1,2,3,4,5,6,7]
+epsilon_list = [0.1,0.07,0.05,0.01,0.005,0.001]
+ss_save = [1,2,3,4,5,6]
 delta = 0.1
 run = 10
-#=
+
 # Undirected
 #datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
+#datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt"]
 datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt"]
 
 directed = false
@@ -27,10 +28,10 @@ for ds in datasets
         i+=1
     end
 end
-=#
+
 # Directed
 #datasets = ["11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
-datasets =  ["15_cit_hepph.txt","14_p2p_gnutella31.txt"]
+datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 
 #datasets = ["04_web_notredame.txt","05_wiki_talk.txt","06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt"]
 directed = true
