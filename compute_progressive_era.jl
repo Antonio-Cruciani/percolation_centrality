@@ -2,15 +2,18 @@ include("src/PERC.jl")
 
 #Common parameters
 
-epsilon_list = [0.1,0.07,0.05,0.01,0.005,0.001]
+epsilon_list = [0.1,0.07,0.05,0.01,0.005]
 ss_save = [1,2,3,4,5,6]
 
 delta = 0.1
 run = 10
 vc_ub = false
 
+
+
 # Undirected
-datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt"]
+#datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt"]
+datasets = ["07_large_twitch_edges.txt"]
 
 directed = false
 separator = "\t"
@@ -54,3 +57,4 @@ for ds in datasets
         i+=1
     end
 end
+
