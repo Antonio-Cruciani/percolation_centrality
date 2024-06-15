@@ -1,6 +1,6 @@
 
 #using Conda
-using PyCall
+#using PyCall
 #Conda.add("scipy")
 
 function supremum_deviation(x::Array{Float64},y::Array{Float64})::Float64
