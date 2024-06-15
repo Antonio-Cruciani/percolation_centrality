@@ -15,7 +15,6 @@ for ds in datasets
     @info("Computing Ground Truth distance based metrics for "*ds_name)
     flush(stderr)
     x = parallel_random_bfs_rho(g,0)
-    println(x)
     save_diameter(ds_name,x[1],x[2],x[3])
 end
 
@@ -23,7 +22,6 @@ end
 datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
 #datasets = ["06_web_google.txt","08_web_berkstan.txt","09_italian_twitter.txt","13_soc_pokec.txt","05_wiki_talk.txt"]
 
-perc = random_percolations(nv(g))
 
 directed = true
 
