@@ -166,3 +166,16 @@ function read_centrality_values(file_name::String)::Array{Float64}
     close(f)
     return centrality
 end
+
+function read_distance_measures(nn::String)
+    
+    res = []
+
+    file_name = "distance_metrics/"*nn*".txt"
+    @assert isfile(file_name) "The diameter does not exists"
+    f = open(file_name, "r")
+    res = [parse(Float64,x) for x in split(readline(f),",")]
+    close(f)
+  
+    return res
+end
