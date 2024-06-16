@@ -69,7 +69,7 @@ function _per_cent_accumulate!(u::Int64,g,percolation_states::Array{Float64},sum
     delta::Array{Float64} = zeros(Float64,n)
     dist::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     pred::Array{Array{Int64}} = Array{Array{Int64}}([[] for _ in 1:n])
     q::Queue{Int64} = Queue{Int64}()
     s::Stack{Int64} = Stack{Int64}()

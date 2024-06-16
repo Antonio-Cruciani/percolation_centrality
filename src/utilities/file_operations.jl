@@ -174,7 +174,7 @@ function read_distance_measures(nn::String)
     file_name = "distance_metrics/"*nn*".txt"
     @assert isfile(file_name) "The diameter does not exists"
     f = open(file_name, "r")
-    res = [parse(Float64,x) for x in split(readline(f),",")]
+    res = [parse(Float64,x) for x in split(readline(f)," ")]
     close(f)
   
     return res

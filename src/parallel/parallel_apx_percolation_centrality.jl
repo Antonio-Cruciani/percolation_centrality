@@ -816,7 +816,7 @@ function _parallel_sz_bfs_bernstein!(g,percolation_states::Array{Float64},percol
     n::Int64 = nv(g)
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
     previous_l::Int64 = lastindex(tilde_b)
@@ -880,7 +880,7 @@ function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data
     n::Int64 = nv(g)
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
 
@@ -1088,7 +1088,7 @@ function _parallel_sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_
     w::Int64 = 0
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
     d_z_min::Float64 = Inf

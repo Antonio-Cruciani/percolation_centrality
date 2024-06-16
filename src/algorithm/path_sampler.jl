@@ -17,7 +17,7 @@ macro incidency()
 end
 
 
-function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{Int64},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool =true,boostrap_phase::Bool = false)
+function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int16},n_paths::Array{UInt128},dist::Array{Int64},pred::Array{Array{Int64}},num_paths::Array{Int64},percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool =true,boostrap_phase::Bool = false)
 
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
@@ -42,12 +42,12 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     neigh_num::UInt64 = 0
     to_expand::Int16 = 0
     vis_edges::Int64 = 0
-    num_path_to_sample::Int64 = 1
-    num_paths::Int64 = 0
+    num_path_to_sample::UInt128 = 1
+    num_paths::UInt128 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
     path::Array{Int64} = Array{Int64}([])
-    path_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
-    pm_value::Int64 = 0
+    path_map::Dict{Int64,UInt128} = Dict{Int64,UInt128}()
+    pm_value::UInt128 = 0
     percolation_value::Float64 = 0.0
     lambdas::Array{Int64} = zeros(mc_trials)
     maxval_lambdas::Int64 = 100000000
@@ -256,7 +256,7 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
 
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
     #num_paths::Array{Int64} = zeros(Int64,n)
@@ -283,12 +283,12 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
     neigh_num::UInt64 = 0
     to_expand::Int16 = 0
     vis_edges::Int64 = 0
-    num_path_to_sample::Int64 = 1
-    num_paths::Int64 = 0
+    num_path_to_sample::UInt128 = 1
+    num_paths::UInt128 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
     path::Array{Int64} = Array{Int64}([])
-    path_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
-    pm_value::Int64 = 0
+    path_map::Dict{Int64,UInt128} = Dict{Int64,UInt128}()
+    pm_value::UInt128 = 0
     percolation_value::Float64 = 0.0
     lambdas::Array{Int64} = zeros(mc_trials)
     maxval_lambdas::Int64 = 100000000
@@ -503,7 +503,7 @@ function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_central
 
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{Int64} = zeros(Int64,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
     #num_paths::Array{Int64} = zeros(Int64,n)
@@ -530,12 +530,12 @@ function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_central
     neigh_num::UInt64 = 0
     to_expand::Int16 = 0
     vis_edges::Int64 = 0
-    num_path_to_sample::Int64 = 1
-    num_paths::Int64 = 0
+    num_path_to_sample::UInt128 = 1
+    num_paths::UInt128 = 0
     sp_edges::Array{Tuple{Int64,Int64}} = Array{Tuple{Int64,Int64}}([])
     path::Array{Int64} = Array{Int64}([])
-    path_map::Dict{Int64,Int64} = Dict{Int64,Int64}()
-    pm_value::Int64 = 0
+    path_map::Dict{Int64,UInt128} = Dict{Int64,UInt128}()
+    pm_value::UInt128 = 0
     percolation_value::Float64 = 0.0
     lambdas::Array{Int64} = zeros(mc_trials)
     maxval_lambdas::Int64 = 100000000
@@ -753,7 +753,7 @@ function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_central
     return nothing
 end
 
-function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths::Array{Int64},pred::Array{Array{Int64}})
+function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths::Array{UInt128},pred::Array{Array{Int64}})
     tot_weight::UInt128 = n_paths[w]
     random_pred::UInt128 = 0
     cur_pred::UInt128 = 0
