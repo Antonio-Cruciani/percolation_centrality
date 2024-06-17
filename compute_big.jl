@@ -4,7 +4,7 @@ ss_save = [1,2,3,4,5]
 delta = 0.1
 run = 10
 
-
+#=
 # Percolation states generation
 
 # Undirected
@@ -36,6 +36,7 @@ for ds in datasets
     ds_name = string(split(ds,".txt")[1])
     save_percolation_array(ds_name,perc)
 end
+=#
 
 # Estimation phase
 
@@ -49,7 +50,7 @@ datasets = ["10_flickr.txt"]
 
 directed = false
 separator = "\t"
-
+I get Ales
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
@@ -59,7 +60,7 @@ for ds in datasets
     for epsilon in epsilon_list
         for _ in 1:run
             x = parallel_estimate_percolation_centrality_lock(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon)
+            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5])
         end
         i+=1
     end
