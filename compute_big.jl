@@ -4,9 +4,9 @@ ss_save = [1,2,3,4,5]
 delta = 0.1
 run = 10
 
-#=
-# Percolation states generation
 
+# Percolation states generation
+#=
 # Undirected
 datasets = ["10_flickr.txt"]
 
@@ -37,7 +37,6 @@ for ds in datasets
     save_percolation_array(ds_name,perc)
 end
 =#
-
 # Estimation phase
 
 # c-MCERA
@@ -50,7 +49,6 @@ datasets = ["10_flickr.txt"]
 
 directed = false
 separator = "\t"
-I get Ales
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
