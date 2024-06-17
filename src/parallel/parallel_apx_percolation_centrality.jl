@@ -486,6 +486,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     @info("Bootstrap completed in "*finish_bootstrap)
     @info("Inferring initial sample size for the geometric sampler")
     flush(stderr)
+    time_estimation::Float64 = time()
     num_samples_bs::Float64 = 0.0
     while first_sample_upper - first_sample_lower> 10
         num_samples_bs = (first_sample_upper+first_sample_lower)÷2
@@ -624,7 +625,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
     flush(stderr)
-    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time
+    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time,time()-time_estimation
 
 end
 

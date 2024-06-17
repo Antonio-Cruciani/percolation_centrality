@@ -115,19 +115,35 @@ function save_sample_size(nn::String,algo::String,ss::Int64)::nothing
     close(f)
 end
 
-function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,xi::Float64 = -1.0)
-    if (length(c) > 0)
-        mkpath("scores/" * nn * "/")
-        append_centrality_values("scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
-        mkpath("times/" * nn * "/")
-        f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
-        write(f, string(round(t; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
-        close(f)
+function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,xi::Float64 = -1.0,est_time::Float64 = -1.0)
+    if est_time == -1.0
+        if (length(c) > 0)
+            mkpath("scores/" * nn * "/")
+            append_centrality_values("scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
+            mkpath("times/" * nn * "/")
+            f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, string(round(t; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
+            close(f)
+        else
+            mkpath("times/" * nn * "/")
+            f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, "-1.0 -1.0 -1.0 -1.0,-1.0")
+            close(f)
+        end
     else
-        mkpath("times/" * nn * "/")
-        f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
-        write(f, "-1.0 -1.0 -1.0 -1.0,-1.0")
-        close(f)
+        if (length(c) > 0)
+            mkpath("scores/" * nn * "/")
+            append_centrality_values("scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
+            mkpath("times/" * nn * "/")
+            f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, string(round(t; digits=4))*" "*string(round(est_time; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
+            close(f)
+        else
+            mkpath("times/" * nn * "/")
+            f = open("times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, "-1.0 -1.0 -1.0 -1.0 -1.0")
+            close(f)
+        end
     end
 end
 
