@@ -117,10 +117,19 @@ function parallel_random_bfs_rho(g,sample_size::Int64)::Tuple{Int64,Float64,Floa
     end
     final_rho = reduce(+,rho)
     avg_dist::Float64 = 0.0
+    temporal_hop_table = zeros(lb+1)
+    accum = 0
+    for h in 1:(lb+1)
+        accum += final_rho[h]
+        temporal_hop_table[h] = n * accum/sample_size
+    end
+    #=
     for d in 1:lb
         avg_dist += (d-1)*final_rho[d]
     end
-    avg_dist = avg_dist /(n*rp/sample_size)
+    =#
+    avg_dist = average_distance(temporal_hop_table)
+    #avg_dist = avg_dist /(n*rp/sample_size)
     alpha::Float64 = n*rp/(sample_size*n*(n-1))
     @info("Connectivity rate "*string(round(alpha;digits = 5)))
     flush(stderr)
@@ -158,4 +167,25 @@ function _bfs_rho!(s::Int64,g,diam::Array{Int64},rho::Array{Int64},reachable_pai
     end
 
     return nothing
+end
+
+function average_distance(ht::Array{Float64})::Float64
+    if length(ht) == 0
+        return 0.0
+    end
+    distance::Array{Float64} = distance_function(ht)
+    m::Float64 = 0.0
+    for i in 1:lastindex(distance)
+        m += (distance[i] * (i-1))
+    end
+    return m/ht[length(ht)]
+end
+
+
+function distance_function(ht::Array{Float64})::Array{Float64}
+    table::Array{Float64} = copy(ht)
+    for i in lastindex(table):-1:2
+        table[i] -= table[i-1]
+    end
+    return table
 end

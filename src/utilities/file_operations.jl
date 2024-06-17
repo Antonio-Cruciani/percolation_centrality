@@ -97,7 +97,7 @@ end
 function save_diameter(nn::String,diam::Int64,avg_dist::Float64,tt::Float64)
     mkpath("distance_metrics/")
     f = open("distance_metrics/" * nn *".txt","a")
-    write(f, string(diam)*" "*string(avg_dist)*" "*string(round(tt; digits=4)))
+    write(f, string(diam)*" "*string(avg_dist)*" "*string(round(tt; digits=4))*"\n")
     close(f)
 end
 
