@@ -13,7 +13,7 @@ datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt
 
 directed = false
 separator = "\t"
-
+#=
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
