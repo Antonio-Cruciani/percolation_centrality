@@ -42,7 +42,7 @@ end
 # c-MCERA
 
 # Undirected
-
+#=
 datasets = ["10_flickr.txt"]
 
 
@@ -143,7 +143,7 @@ for ds in datasets
         i+=1
     end
 end
-
+=#
 # Fixed Sample Size
 # Undirected
 
