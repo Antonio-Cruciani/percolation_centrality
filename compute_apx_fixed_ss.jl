@@ -4,7 +4,7 @@ include("src/PERC.jl")
 #Common parameters
 delta = 0.1
 epsilon_list = [0.1,0.07,0.05,0.01,0.005]
-ss_save = [1,2,3,4,5,6]
+ss_save = [1,2,3,4,5]
 run = 10
 
 #=

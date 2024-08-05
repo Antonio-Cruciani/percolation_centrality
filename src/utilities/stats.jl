@@ -145,10 +145,20 @@ function get_times(starting_sample::Int64,target_epsilon::Float64,datasets::Arra
         #else
         #apx_path = "times/"*gn*"/"*prog_sampler*"_"*algo*"_"*method*"_"*upper_bound_samples*"_"*string(starting_sample)*".txt"
         #end
-        times = read_time(apx_path)
-        samples =read_sample_size(apx_path)
-        xi = read_xi(apx_path)
-        push!(results,[gn,algo,exact,mean(times),std(times),mean(samples),std(samples),mean(xi),std(xi)])
+        if algo == "cmcera"
+            times,btimes = read_time(apx_path,true)
+            samples =read_sample_size(apx_path,true)
+            xi = read_xi(apx_path,true)
+
+            push!(results,[gn,algo,exact,mean(times),std(times),mean(samples),std(samples),mean(xi),std(xi),mean(btimes),std(btimes)])
+
+        else
+            times= read_time(apx_path)
+            samples =read_sample_size(apx_path)
+            xi = read_xi(apx_path)
+
+            push!(results,[gn,algo,exact,mean(times),std(times),mean(samples),std(samples),mean(xi),std(xi)])
+        end
     end
     mkpath("analysis/")
     header = false
@@ -157,10 +167,14 @@ function get_times(starting_sample::Int64,target_epsilon::Float64,datasets::Arra
     end
     open("analysis/times.txt","a") do file
         if header
-            write(file,"Graph,Epsilon,Algorithm,ExactTime,ApxTimeMean,ApxTimeStd,SampleSizeMean,SampleSizeStd,XiMean,XiStd\n")            
+            write(file,"Graph,Epsilon,Algorithm,ExactTime,ApxTimeMean,ApxTimeStd,SampleSizeMean,SampleSizeStd,XiMean,XiStd,PH2TimeMean,PH2TimeStd\n")            
         end
         for res in results
-            write(file,res[1]*","*string(target_epsilon)*","*res[2]*","*string(res[3])*","*string(res[4])*","*string(res[5])*","*string(res[6])*","*string(res[7])*","*string(res[8])*","*string(res[9])*"\n")
+            if algo == "cmcera"
+                write(file,res[1]*","*string(target_epsilon)*","*res[2]*","*string(res[3])*","*string(res[4])*","*string(res[5])*","*string(res[6])*","*string(res[7])*","*string(res[8])*","*string(res[9])*","*string(res[10])*","*string(res[11])*"\n")
+            else
+                write(file,res[1]*","*string(target_epsilon)*","*res[2]*","*string(res[3])*","*string(res[4])*","*string(res[5])*","*string(res[6])*","*string(res[7])*","*string(res[8])*","*string(res[9])*",-1,-1\n")
+            end
         end
     end
 end

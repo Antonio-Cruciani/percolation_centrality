@@ -40,15 +40,23 @@ function append_centrality_values(file_name::String, centrality::Array{Float64})
 end
 
 
-function read_time(file_name::String)
+function read_time(file_name::String,bootstrap::Bool = false)
     @assert isfile(file_name) "The time value file does not exist: "*string(file_name)
     f = open(file_name, "r")
-    t::Array{Float64} = []
+    t = []
+    bt = []
     for line in eachline(f)
         split_line::Vector{String} = split(line, " ")
+        if bootstrap
+            push!(bt,parse(Float64, split_line[2]))
+        end
+            
         push!(t,parse(Float64, split_line[1]))
     end
     close(f)
+    if bootstrap
+        return t,bt
+    end
     if length(t) == 1
         return t[1]
     else
@@ -56,13 +64,18 @@ function read_time(file_name::String)
     end 
 end
 
-function read_sample_size(file_name::String)
+function read_sample_size(file_name::String,bootstrap::Bool = false)
     @assert isfile(file_name) "The time value file does not exist"
     f = open(file_name, "r")
     t::Array{Float64} = []
     for line in eachline(f)
         split_line::Vector{String} = split(line, " ")
-        push!(t,parse(Float64, split_line[2]))
+        if bootstrap
+            push!(t,parse(Float64, split_line[3]))
+        else
+            push!(t,parse(Float64, split_line[2]))
+        end
+
     end
     close(f)
     if length(t) == 1
@@ -72,13 +85,18 @@ function read_sample_size(file_name::String)
     end 
 end
 
-function read_xi(file_name::String)
+function read_xi(file_name::String,bootstrap::Bool = false)
     @assert isfile(file_name) "The time value file does not exist"
     f = open(file_name, "r")
     t::Array{Float64} = []
     for line in eachline(f)
         split_line::Vector{String} = split(line, " ")
-        push!(t,parse(Float64, split_line[3]))
+        if bootstrap
+            push!(t,parse(Float64, split_line[4]))
+        else
+            push!(t,parse(Float64, split_line[3]))
+        end
+
     end
     close(f)
     if length(t) == 1

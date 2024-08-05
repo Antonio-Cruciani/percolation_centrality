@@ -23,7 +23,7 @@ trials = 10
 
 kappas = [10,25,50]
 
-
+#=
 j = 1
 
 for eps in epsilon_list
@@ -85,3 +85,52 @@ for eps in epsilon_list
         #end
     end
 end
+=#
+# BIG
+datasets = ["10_flickr.txt"]
+
+directed = false
+
+trials = 10
+
+kappas = [10,25,50]
+
+
+j = 1
+
+for eps in epsilon_list
+    ss = sample_list[j]
+    global j += 1
+    for s in algos
+        @info("ANALIZYING EPS: "*string(eps)*" ALGO "*s )
+        #get_correlations(p,ss,eps,datasets,algo,s,trials,ub)
+        #get_errors(ss,eps,datasets,s,trials,directed)
+        get_times(ss,eps,datasets,s)
+        #for kappa in kappas
+        #    get_ranking_intersections(kappa,ss,eps,datasets,s,trials,directed)
+        #end
+    end
+end
+
+datasets = ["05_wiki_talk.txt","09_italian_twitter.txt","13_soc_pokec.txt"]
+
+directed = true
+
+j = 1
+
+for eps in epsilon_list
+    ss = sample_list[j]
+    global j += 1
+    for s in algos
+        @info("ANALIZYING EPS: "*string(eps)*" ALGO "*s )
+        #get_correlations(p,ss,eps,datasets,algo,s,trials,ub)
+        #get_errors(ss,eps,datasets,s,trials,directed)
+        get_times(ss,eps,datasets,s)
+        #for kappa in kappas
+        #    get_ranking_intersections(kappa,ss,eps,datasets,s,trials,directed)
+        #end
+    end
+end
+
+
+
