@@ -1,9 +1,9 @@
-# Fast Approximation of Percolation Centrality
+# Fast Estimation of Percolation Centrality
 
-Repository associated to the paper "Fast Approximation of Percolation Centrality".
+Repository associated with the paper "Fast Estimation of Percolation Centrality".
 
 # Network file format
-The input file must be a edge list, one line for each edge (a edge is a tuple `(u,v)`, where `u` and `v` are two vertices). While loading the edge list you must specify if the graph is directed or undirected. The two elements of an edge can be separated by any string, which can be specified while using the `load_graph` function (see below). In the following, we assume that this string is just a tab.
+The input file must be an edge list, one line for each edge (an edge is a tuple `(u,v)`, where `u` and `v` are two vertices). While loading the edge list you must specify if the graph is directed or undirected. The two elements of an edge can be separated by any string, which can be specified using the `load_graph` function (see below). In the following, we assume that this string is just a tab.
 
 
 
@@ -16,15 +16,15 @@ where the number indicates the number of thread to use, for more information we 
 
 
 # How to reproduce the experiments in the paper
-To reproduce all the experiment you need to: 
+To reproduce all the experiments you need to: 
 
 (i) Compute the exact percolation centrality values running the command `julia --threads <nthreads> compute_exact_percolations.jl`
 
 (ii) Compute our algorithm's approximation, running `julia --threads <nthreads> compute_progressive_cmcera.jl`
 
-(iii) Compute the Lima et al., progressive sampling algorith's approximation, running `julia --threads <nthreads> compute_progressive_era.jl`
+(iii) Compute the Lima et al., progressive sampling algorithm's approximation, running `julia --threads <nthreads> compute_progressive_era.jl`
 
-(iv) Compute the Lima et al., progressive sampling algorith's approximation, running `julia --threads <nthreads> compute_apx_fixed_ss.jl`
+(iv) Compute the Lima et al., progressive sampling algorithm's approximation, running `julia --threads <nthreads> compute_apx_fixed_ss.jl`
 
 where `<nthreads>` is the number of assigned threads.
 All the results will be automatically saved in the `scores` and `times` folders.
