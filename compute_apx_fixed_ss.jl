@@ -5,7 +5,7 @@ include("src/PERC.jl")
 delta = 0.1
 epsilon_list = [0.1,0.07,0.05,0.01,0.005]
 ss_save = [1,2,3,4,5]
-run = 10
+run = 5
 
 
 #datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
