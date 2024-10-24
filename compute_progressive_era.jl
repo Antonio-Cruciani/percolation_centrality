@@ -6,13 +6,14 @@ epsilon_list = [0.1,0.07,0.05,0.01,0.005]
 ss_save = [1,2,3,4,5]
 
 delta = 0.1
-run = 10
+run = 5
 vc_ub = false
 
 
 
 # Undirected
-datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
+#datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
+datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 
 
 
@@ -28,14 +29,14 @@ for ds in datasets
         for _ in 1:run
             @info("Computing Apx percolation centrality for "*ds_name)
             flush(stderr)
-            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta,0,1.2,256,true)
+            x = parallel_estimate_percolation_centrality_era(g,perc,epsilon,delta,0,1.2,256,vc_ub)
             save_results_progressive_sampling(ds_name,"era",x[1],x[2][end],x[5],ss_save[i],x[4])
         end
         i+=1
     end
 end
 
-
+#=
 # Directed
 datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt","05_wiki_talk.txt","09_italian_twitter.txt","13_soc_pokec.txt"]
 
@@ -59,3 +60,4 @@ for ds in datasets
     end
 end
 
+=#
