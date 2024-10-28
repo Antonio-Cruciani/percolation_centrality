@@ -133,6 +133,14 @@ function save_sample_size(nn::String,algo::String,ss::Int64)::nothing
     close(f)
 end
 
+
+function save_results_ss(nn::String,cn::String, ss::Int64,starting_ss::Int64)
+    mkpath("estimates/" * nn * "/")
+    f = open("estimates/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+    write(f,  string(ss) *"\n")
+    close(f)
+end
+
 function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,xi::Float64 = -1.0,est_time::Float64 = -1.0)
     if est_time == -1.0
         if (length(c) > 0)

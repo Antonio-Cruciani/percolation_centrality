@@ -1,5 +1,6 @@
 include("src/PERC.jl")
 
+
 #Common parameters
 #epsilon_list = [0.1,0.07,0.05,0.01,0.005]
 #ss_save = [1,2,3,4,5]
@@ -10,7 +11,7 @@ delta = 0.1
 run = 5
 
 # Undirected
-datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt","com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
+datasets = ["00_hiv.txt","01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt","com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 #datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 
 directed = false
@@ -24,8 +25,9 @@ for ds in datasets
     i = 1
     for epsilon in epsilon_list
         for _ in 1:run
-            x = parallel_estimate_percolation_centrality_lock(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5])
+            x = parallel_estimate_cmcera_ss_lock(g,perc,epsilon,delta)
+            save_results_ss(ds_name,"cmcera",trunc(Int64,x[1]),ss_save[i])
+            save_results_ss(ds_name,"fixed_ss",trunc(Int64,x[2]),ss_save[i])
         end
         i+=1
     end
@@ -48,10 +50,10 @@ for ds in datasets
         for _ in 1:run
             @info("Computing Apx percolation centrality for "*ds_name)
             flush(stderr)
-            x = parallel_estimate_percolation_centrality_lock(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5])
+            x = parallel_estimate_cmcera_ss_lock(g,perc,epsilon,delta)
+            save_results_ss(ds_name,"cmcera",trunc(Int64,x[1]),ss_save[i])
+            save_results_ss(ds_name,"fixed_ss",trunc(Int64,x[2]),ss_save[i])
         end
         i+=1
     end
 end
-
