@@ -1,10 +1,10 @@
 include("src/PERC.jl")
 
 #Common parameters
-#epsilon_list = [0.1,0.07,0.05,0.01,0.005]
-#ss_save = [1,2,3,4,5]
-ss_save = [6,7,8]
-epsilon_list = [0.0025,0.0001,0.00005]
+epsilon_list = [0.1,0.07,0.05,0.01,0.005]
+ss_save = [1,2,3,4,5]
+#ss_save = [6,7,8]
+#epsilon_list = [0.0025,0.0001,0.00005]
 
 delta = 0.1
 run = 5
