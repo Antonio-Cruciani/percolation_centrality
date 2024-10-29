@@ -60,10 +60,14 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     while (s == z)
         z = sample(1:n)
     end
+    q_s::Queue{Int64} = Queue{Int64}()
+    q_z::Queue{Int64} = Queue{Int64}()
+    enqueue!(q_s,s)
+    enqueue!(q_z,z)
 
     end_q = 2
-    q[1] = s
-    q[2] = z
+    #q[1] = s
+    #q[2] = z
     #println("q ",q)
     ball[s] = @visited_s
     ball[z] = @visited_z
@@ -99,7 +103,12 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
         while (start_cur < end_cur)
            # println("START CUR ",start_cur," END CUR ",end_cur)
             # to test
-            x = q[start_cur]
+            #x = q[start_cur]
+            if to_expand == @adjacency
+                x = dequeue!(q_s)
+            else
+                x = dequeue!(q_z)
+            end
             start_cur += 1
             if (to_expand == @adjacency)
                 neigh_num = lastindex(sg.adjacency[x])
@@ -120,13 +129,15 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
                 if (ball[y] == @unvisited)
                     if (to_expand == @adjacency)
                         sum_degs_cur += lastindex(sg.adjacency[y])
+                        enqueue!(q_s,y)
                     else
                         sum_degs_cur += lastindex(sg.incidency[y])
+                        enqueue!(q_z,y)
                     end
                     n_paths[y] = n_paths[x]
                     ball[y] = ball[x]
                     end_q += 1
-                    q[end_q] = y
+                    #q[end_q] = y
                     new_end_cur += 1
                     push!(pred[y],x)
                     dist[y] = dist[x] + 1
