@@ -159,7 +159,7 @@ function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float
     else
         if (length(c) > 0)
             mkpath(output_path*"scores/" * nn * "/")
-            append_centrality_values("scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
+            append_centrality_values(output_path*"scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
             mkpath(output_path*"times/" * nn * "/")
             f = open(output_path*"times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
             write(f, string(round(t; digits=4))*" "*string(round(est_time; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
