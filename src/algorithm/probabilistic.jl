@@ -108,7 +108,7 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
     num_samples_d::Float64 = num_samples
     delta_for_progressive_bound::Float64 = delta/2^iteration
     #println("Checking stopping condition at iteration "*string(iteration)*" sample size "*string(num_samples)*" δ = "*string(delta_for_progressive_bound))
-    
+    #=
     if second_phase
         avg_diam_upperbound::Float64 = upper_bound_average_diameter(delta_for_progressive_bound,diam,tdd,sample_size,false)
         top1_est_bc::Float64 = maximum(percolation)/num_samples_d
@@ -127,6 +127,7 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
             flush(stderr)
         end
     end
+    =#
     
     sup_pcest_partition::Array{Float64} = zeros(n)
     sup_empwvar_partition::Array{Float64} = zeros(n)
