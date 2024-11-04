@@ -8,7 +8,9 @@ ss_save = [1,2,3,4,5]
 
 delta = 0.1
 run = 5
-
+graphs_path = "/home/pasquini/My_nas/data_percolation/graphs/"
+percolation_path = "/home/pasquini/My_nas/data_percolation/percolation_states/"
+output_path = "/home/pasquini/My_nas/data_percolation/"
 # Undirected
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt","com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 #datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
@@ -17,15 +19,15 @@ directed = false
 separator = "\t"
 
 for ds in datasets
-    gf = "graphs/"*ds
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
-    perc = read_percolation("percolation_states/"*ds)
+    perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
     i = 1
     for epsilon in epsilon_list
         for _ in 1:run
             x = parallel_estimate_percolation_centrality_lock(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5])
+            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5],output_path)
         end
         i+=1
     end
@@ -39,9 +41,9 @@ directed = true
 separator = "\t"
 
 for ds in datasets
-    gf = "graphs/"*ds
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
-    perc = read_percolation("percolation_states/"*ds)
+    perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
     i = 1
     for epsilon in epsilon_list
@@ -49,7 +51,7 @@ for ds in datasets
             @info("Computing Apx percolation centrality for "*ds_name)
             flush(stderr)
             x = parallel_estimate_percolation_centrality_lock(g,perc,epsilon,delta)
-            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5])
+            save_results_progressive_sampling(ds_name,"cmcera",x[1],x[2],x[4],ss_save[i],epsilon,x[5],output_path)
         end
         i+=1
     end
