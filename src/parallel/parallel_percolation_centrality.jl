@@ -1,3 +1,6 @@
+function clean_gc()
+    GC.gc()
+end
 function parallel_percolation_centrality(g,percolation_states::Array{Float64},normalized::Bool = true)::Tuple{Array{Float64},Float64}
     @assert nv(g) == lastindex(percolation_states) "Vertex set and percolation array must have the same dimensions"
     @info("----------------------------------------| Stats |--------------------------------------------------")
