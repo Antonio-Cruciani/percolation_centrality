@@ -8,7 +8,7 @@ directed = false
 separator = "\t"
 normalized = false
 for ds in datasets
-    gf = "graphs/"*ds
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
@@ -28,7 +28,7 @@ directed = true
 separator = "\t"
 normalized = false
 for ds in datasets
-    gf = "graphs/"*ds
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
