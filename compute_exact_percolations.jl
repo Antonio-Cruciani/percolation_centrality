@@ -10,9 +10,8 @@ normalized = false
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
-    perc = random_percolations(nv(g))
+    perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
-    save_percolation_array(ds_name,perc)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     flush(stderr)
     
@@ -31,9 +30,8 @@ normalized = false
 for ds in datasets
     gf = "graphs/"*ds
     g = load_graph(gf,directed,separator)
-    perc = random_percolations(nv(g))
+    perc = read_percolation(percolation_path*ds)
     ds_name = string(split(ds,".txt")[1])
-    save_percolation_array(ds_name,perc)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     flush(stderr)
     x = parallel_percolation_centrality(g,perc,normalized)
