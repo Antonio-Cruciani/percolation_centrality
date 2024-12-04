@@ -144,6 +144,8 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
         end
     end
     N = lastindex(all_couples)
+    @info("Overall number of couples "*string(N))
+    flush(stderr)
     vs_active = [i for i in 1:N]
     d, r = divrem(N, nthreads())
     ntasks = d == 0 ? r : nthreads()
@@ -158,7 +160,9 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
         Threads.@spawn for i in @view(vs_active[task_range])
             s = all_couples[i][1]
             z = all_couples[i][2]
-            _parallel_sz_bfs_exact!(s,z,n,percolation_states,percolation_data,percolation[t])
+            if length(outneighbors(g,s)) > 0 && length(inneighbors(g,z)) > 0 && ramp(percolation_states[s],percolation_states[z]) > 0
+                _parallel_sz_bfs_exact!(g,s,z,n,percolation_states,percolation_data,percolation[t])
+            end
 
             if (Sys.free_memory() / Sys.total_memory() < 0.1)
                 clean_gc()
@@ -168,7 +172,7 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
             if (verbose_step > 0 && processed_so_far % verbose_step == 0)
                 finish_partial::String = string(round(time() - start_time; digits=4))
                 time_to_finish::String = string(round((n*(time() - start_time) / processed_so_far )-(time() - start_time) ; digits=4))
-                @info("Percolation Centrality. Processed " * string(processed_so_far) * "/" * string(n) * " nodes in " * finish_partial * " seconds | Est. remaining time : "*time_to_finish)
+                @info("Percolation Centrality. Processed " * string(processed_so_far) * "/" * string(N) * " nodes in " * finish_partial * " seconds | Est. remaining time : "*time_to_finish)
                 flush(stderr)
             end
         end
@@ -185,7 +189,7 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
 end
 
 
-function _parallel_sz_bfs_exact!(s::Int64,z::Int64,n::Int64,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},B_1::Array{Float64})
+function _parallel_sz_bfs_exact!(g,s::Int64,z::Int64,n::Int64,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},B_1::Array{Float64})
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
     n_paths::Array{UInt128} = zeros(UInt128,n)
