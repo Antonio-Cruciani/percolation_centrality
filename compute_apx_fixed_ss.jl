@@ -5,7 +5,7 @@ include("src/PERC.jl")
 delta = 0.1
 epsilon_list = [0.1,0.07,0.05,0.01,0.005]
 ss_save = [1,2,3,4,5]
-run = 5
+run = 1
 
 #=
 graphs_path = "/home/pasquini/My_nas/data_percolation/graphs/"
@@ -15,8 +15,8 @@ output_path = "/home/pasquini/My_nas/data_percolation/"
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
-datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
-#datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
+#datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
+datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 
 # Undirected
 directed = false

@@ -56,7 +56,8 @@ function parallel_percolation_centrality(g,percolation_states::Array{Float64},no
     end
     final_percolation = reduce(+,percolation)
     if normalized
-        final_percolation = final_percolation .* [1/(n*(n-1))]
+        #final_percolation = final_percolation .* [1/(n*(n-1))]
+        final_percolation = final_percolation .* [1/(n-2)]
     end
     finish_time::Float64 = time()-start_time
     @info("Percolation centrality computed in "*string(finish_time))

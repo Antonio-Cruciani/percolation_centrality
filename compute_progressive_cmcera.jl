@@ -7,7 +7,7 @@ ss_save = [1,2,3,4,5]
 #epsilon_list = [0.0025,0.0001,0.00005]
 
 delta = 0.1
-run = 5
+run = 
 #=
 graphs_path = "/home/pasquini/My_nas/data_percolation/graphs/"
 percolation_path = "/home/pasquini/My_nas/data_percolation/percolation_states/"
