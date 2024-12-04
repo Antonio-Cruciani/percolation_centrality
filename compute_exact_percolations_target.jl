@@ -7,6 +7,7 @@ directed = false
 
 separator = "\t"
 normalized = false
+percolation_path = "percolation_states/"
 graphs_path = "graphs/"
 for ds in datasets
     gf = graphs_path*ds

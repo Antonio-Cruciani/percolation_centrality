@@ -5,6 +5,7 @@ include("src/PERC.jl")
 datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt"]
 directed = false
 graphs_path = "graphs/"
+percolation_path = "percolation_states/"
 separator = "\t"
 normalized = false
 for ds in datasets
