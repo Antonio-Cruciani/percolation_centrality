@@ -115,3 +115,69 @@ function _per_cent_accumulate!(u::Int64,g,percolation_states::Array{Float64},sum
 
 end
 
+
+
+function parallel_percolation_centrality_target(g,percolation_states::Array{Float64},normalized::Bool = true)::Tuple{Array{Float64},Float64}
+    @assert nv(g) == lastindex(percolation_states) "Vertex set and percolation array must have the same dimensions"
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(nv(g)))
+    @info("Number of edges "*string(ne(g)))
+    @info("Directed ? "*string(is_directed(g)))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    @info("Computing percolation centrality")
+    flush(stderr)
+    start_time::Float64 = time()
+    n::Int64 = nv(g)
+    #percent_status::Array{Tuple{Float64,Int64,String}} = [(0.25,trunc(Int64,n*0.25),"Analyzed 25% of the graph"),(0.50,trunc(Int64,n*0.50),"Analyzed 50% of the graph"),(0.75,trunc(Int64,n*0.75),"Analyzed 75% of the graph"),(0.9,trunc(Int64,n*0.9),"Analyzed 90% of the graph")]
+    #percent_index::Int16 = 1
+    N = n*(n-1)
+    vs_active = [i for i in 1:N]
+    d, r = divrem(n, nthreads())
+    ntasks = d == 0 ? r : nthreads()
+    task_size = cld(N, ntasks)
+    percolation::Array{Array{Float64}} = [zeros(Float64,N) for _ in 1:ntasks]
+    final_percolation::Array{Float64} = zeros(Float64,N)
+    sum_percolations::Float64 = sum(percolation_states)
+    verbose_step::Int64 = trunc(Int64,floor(N*0.25))
+    processed_so_far::Int64 = 0
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
+        Threads.@spawn for s in @view(vs_active[task_range])
+            _per_cent_accumulate!(s,g,percolation_states,sum_percolations,percolation[t])
+            if (Sys.free_memory() / Sys.total_memory() < 0.1)
+                clean_gc()
+                sleep(0.01)
+            end
+            processed_so_far +=1
+            if (verbose_step > 0 && processed_so_far % verbose_step == 0)
+                finish_partial::String = string(round(time() - start_time; digits=4))
+                time_to_finish::String = string(round((n*(time() - start_time) / processed_so_far )-(time() - start_time) ; digits=4))
+                @info("Percolation Centrality. Processed " * string(processed_so_far) * "/" * string(n) * " nodes in " * finish_partial * " seconds | Est. remaining time : "*time_to_finish)
+                flush(stderr)
+            end
+            #=
+            if percent_index <= length(percent_status)
+                if trunc(Int64,s*percent_status[percent_index][1]) == percent_status[percent_index][2]
+                    finish_partial = string(round(time()-start_time; digits=4))
+                    est =string(round( (time()-start_time )* n/s;digits = 4))
+                    @info(percent_status[percent_index][3]*" in "*finish_partial*" seconds | Estimated remaining time "*est* " seconds")
+                    percent_index+=1
+                end
+            end
+            =#
+        end
+    end
+    final_percolation = reduce(+,percolation)
+    if normalized
+        #final_percolation = final_percolation .* [1/(n*(n-1))]
+        final_percolation = final_percolation .* [1/(n-2)]
+    end
+    finish_time::Float64 = time()-start_time
+    @info("Percolation centrality computed in "*string(finish_time))
+    flush(stderr)
+    return final_percolation,finish_time
+end
