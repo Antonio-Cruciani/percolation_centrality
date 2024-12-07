@@ -23,7 +23,7 @@ end
 
 # Directed
 #datasets = ["04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
-datasets = ["09_italian_twitter.txt","com-youtube.ungraph.txt","13_soc_pokec.txt"]
+datasets = ["09_italian_twitter.txt","13_soc_pokec.txt"]
 
 
 directed = true
