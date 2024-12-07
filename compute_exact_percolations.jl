@@ -2,8 +2,9 @@ include("src/PERC.jl")
 
 # Undirected
 
-datasets = ["03_ca_astroph.txt","07_large_twitch_edges.txt"]
-directed = false
+#datasets = ["03_ca_astroph.txt","07_large_twitch_edges.txt"]
+datasets = ["10_flickr.txt"]
+directed = true
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 separator = "\t"
@@ -21,7 +22,8 @@ for ds in datasets
 end
 
 # Directed
-datasets = ["04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+#datasets = ["04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+datasets = ["09_italian_twitter.txt","com-youtube.ungraph.txt","13_soc_pokec.txt"]
 
 
 directed = true
