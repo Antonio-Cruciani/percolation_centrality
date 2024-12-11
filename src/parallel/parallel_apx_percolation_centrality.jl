@@ -30,8 +30,9 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
     final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
     mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
     final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
-    tmp_perc_states::Array{Float64} = copy(percolation_states)
-    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
     #betweenness::Array{Float64} = zeros(Float64,n)
     start_time::Float64 = time()
     emp_wimpy_node::Float64 = 0.0
@@ -913,9 +914,12 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
     new_sample::Int64 = 0
     sample_size_schedule::Array{Int64} = [0,initial_sample]
     xi::Float64 = 0
-    tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
     diam::Int64 = 0
-    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     if vc_upperbound
         @info("Approximating diameter using Random BFS algorithm")
         flush(stderr)
@@ -1038,7 +1042,7 @@ function _parallel_sz_bfs_bernstein!(g,percolation_states::Array{Float64},percol
    return nothing
 end
 
-function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},B::Dict{Float64,Float64},B_1::Array{Float64},B_2::Array{Float64})
+function _parallel_sz_bfs!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},B::Dict{Float64,Float64},B_1::Array{Float64},B_2::Array{Float64})
     n::Int64 = nv(g)
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
@@ -1206,8 +1210,11 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
     percolation_centrality::Array{Array{Float64}} =  [zeros(Float64,n) for _ in 1:ntasks]
     
     #sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
-    tmp_perc_states::Array{Float64} = copy(percolation_states)
-    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     @info("Approximating diameter using Random BFS algorithm")
     flush(stderr)
     diam,time_diam = parallel_random_bfs(g,sample_size_diam)
@@ -1243,7 +1250,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
 end
 
 
-function _parallel_sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},percolation_centrality::Array{Float64})
+function _parallel_sz_bfs_fss!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},percolation_centrality::Array{Float64})
     n::Int64 = nv(g)
     s::Int64 = sample(1:n)
     z::Int64 = sample(1:n)

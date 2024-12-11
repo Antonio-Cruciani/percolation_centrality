@@ -152,9 +152,11 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
     task_size = cld(N, ntasks)
     percolation::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
     final_percolation::Array{Float64} = zeros(Float64,n)
-    tmp_perc_states::Array{Float64} = copy(percolation_states)
-    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)    
-    println("PERCOLATION DATA ",percolation_data)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)    
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
     verbose_step::Int64 = trunc(Int64,floor(N*0.25))
     processed_so_far::Int64 = 0
     @sync for (t, task_range) in enumerate(Iterators.partition(1:N, task_size))
@@ -190,7 +192,7 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
 end
 
 
-function _parallel_sz_bfs_exact!(g,s::Int64,z::Int64,n::Int64,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},B_1::Array{Float64})
+function _parallel_sz_bfs_exact!(g,s::Int64,z::Int64,n::Int64,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},B_1::Array{Float64})
     q::Queue{Int64} = Queue{Int64}()
     ball::Array{Int16} = zeros(Int16,n)
     n_paths::Array{UInt128} = zeros(UInt128,n)

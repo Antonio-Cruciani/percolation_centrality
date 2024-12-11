@@ -3,12 +3,12 @@ include("src/PERC.jl")
 # Undirected
 
 #datasets = ["03_ca_astroph.txt","07_large_twitch_edges.txt"]
-datasets = ["10_flickr.txt"]
-directed = true
+datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt"]
+directed = false
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 separator = "\t"
-normalized = false
+normalized = true
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
@@ -20,7 +20,7 @@ for ds in datasets
     x = parallel_percolation_centrality(g,perc,normalized)
     save_results(ds_name,"exact",x[1],x[2])
 end
-
+#=
 # Directed
 #datasets = ["04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
 datasets = ["09_italian_twitter.txt"]
@@ -41,4 +41,4 @@ for ds in datasets
     save_results(ds_name,"exact",x[1],x[2])
 end
 
-
+=#

@@ -2,9 +2,9 @@ include("src/PERC.jl")
 
 # Undirected
 
-datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges.txt","02_email_enron.txt"]
-datasets = ["00_test.txt"]
-directed = true
+
+datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt"]
+directed = false
 
 separator = "\t"
 normalized = false
@@ -21,7 +21,7 @@ for ds in datasets
     x = parallel_percolation_centrality_target(g,perc,normalized)
     save_results(ds_name,"exact_target",x[1],x[2])
 end
-
+#=
 # Directed
 #datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt"]
 datasets = ["09_italian_twitter.txt","13_soc_pokec.txt"]
@@ -42,3 +42,4 @@ for ds in datasets
 end
 
 
+=#
