@@ -163,9 +163,9 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
         Threads.@spawn for i in @view(vs_active[task_range])
             s = all_couples[i][1]
             z = all_couples[i][2]
-            #if length(outneighbors(g,s)) > 0 && length(inneighbors(g,z)) > 0 && ramp(percolation_states[s],percolation_states[z]) > 0
-            #end
-            _parallel_sz_bfs_exact!(g,s,z,n,percolation_states,percolation_data,percolation[t])
+            if length(outneighbors(g,s)) > 0 && length(inneighbors(g,z)) > 0 && ramp(percolation_states[s],percolation_states[z]) > 0
+                _parallel_sz_bfs_exact!(g,s,z,n,percolation_states,percolation_data,percolation[t])
+            end
 
             if (Sys.free_memory() / Sys.total_memory() < 0.1)
                 clean_gc()
