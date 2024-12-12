@@ -7,6 +7,20 @@ function save_percolation_array(nn::String,x::Array{Float64})
     close(f)
 end
 
+function save_d_v(nn::String,x::Array{Float64},ss::Int64)
+    mkpath("estimator_statistics/")
+    f::IOStream = open("estimator_statistics/" * nn *".txt", "w")
+    for u in 1:lastindex(x)
+        write(f, string(x[u]) * "\n")
+    end
+    close(f)
+    m = minimum(x)
+    M = maximum(x)
+    f = open("estimator_statistics/" * nn *"_summary.txt", "w")
+    write(f, string(m)*" "*string(M)*" "*string(ss)* "\n")
+    close(f)
+end
+
 function read_percolation(file_name::String)
     @assert isfile(file_name) "The percolation values file does not exist"
     f = open(file_name, "r")

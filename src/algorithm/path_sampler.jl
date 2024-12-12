@@ -265,7 +265,7 @@ end
 
 function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality::Dict{Int64,Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},run_perc::Bool = true,boostrap_phase::Bool = false)
 
-    q::Array{Int64} = zeros(Int64,n)
+    #q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
     n_paths::Array{UInt128} = zeros(UInt128,n)
     dist::Array{Int64} = zeros(Int64,n)
@@ -312,10 +312,13 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
     while (s == z)
         z = sample(1:n)
     end
-
-    end_q = 2
-    q[1] = s
-    q[2] = z
+    q_s::Queue{Int64} = Queue{Int64}()
+    q_z::Queue{Int64} = Queue{Int64}()
+    enqueue!(q_s,s)
+    enqueue!(q_z,z)
+    #end_q = 2
+    #q[1] = s
+    #q[2] = z
     #println("q ",q)
     ball[s] = @visited_s
     ball[z] = @visited_z
@@ -351,7 +354,12 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
         while (start_cur < end_cur)
            # println("START CUR ",start_cur," END CUR ",end_cur)
             # to test
-            x = q[start_cur]
+            #x = q[start_cur]
+            if to_expand == @adjacency
+                x = dequeue!(q_s)
+            else
+                x = dequeue!(q_z)
+            end
             start_cur += 1
             if (to_expand == @adjacency)
                 neigh_num = lastindex(sg.adjacency[x])
@@ -372,13 +380,15 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
                 if (ball[y] == @unvisited)
                     if (to_expand == @adjacency)
                         sum_degs_cur += lastindex(sg.adjacency[y])
+                        enqueue!(q_s,y)
                     else
                         sum_degs_cur += lastindex(sg.incidency[y])
+                        enqueue!(q_z,y)
                     end
                     n_paths[y] = n_paths[x]
                     ball[y] = ball[x]
-                    end_q += 1
-                    q[end_q] = y
+                    #end_q += 1
+                    #q[end_q] = y
                     new_end_cur += 1
                     push!(pred[y],x)
                     dist[y] = dist[x] + 1
@@ -481,7 +491,10 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
         pm_value = path_map[u]
         #println("PM VAL ",pm_value, " RAMP ",ramp(percolation_states[s],percolation_states[z])," DENOM ",percolation_data[2][u], " num path sample ",num_path_to_sample)
         if run_perc
-            percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+            # κ(s,z,v)
+            percolation_value = pm_value* (ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
+
+            #percolation_value = pm_value*(ramp(percolation_states[s],percolation_states[z])/percolation_data[2][u]) /num_path_to_sample
         else
             percolation_value = pm_value/num_path_to_sample
         end

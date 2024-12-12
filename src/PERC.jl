@@ -12,6 +12,7 @@ include("utilities/stats.jl")
 include("utilities/file_operations.jl")
 
 include("algorithm/sum_percolations.jl")
+include("algorithm/estimator.jl")
 include("algorithm/path_sampler.jl")
 include("algorithm/probabilistic.jl")
 include("algorithm/diameter_approximation.jl")
