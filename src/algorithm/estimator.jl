@@ -53,7 +53,7 @@ end
 
 
 
-
+#=
 
 
 @inline function approx_d_max(n::Int64,X::Array{Float64},sample_size::Int64)::Tuple{Array{Float64},Float64}
@@ -100,3 +100,35 @@ end
     @info("minimum d_v = "*string(minimum(final_d_v))*" maximum d_v = "*string(maximum(final_d_v))*" computed in "*string(end_time)*" seconds")
     return final_d_v,end_time
 end
+
+=#
+
+
+@inline function partition_percolation_states(percolation_states::Array{Float64},alpha::Float64 = 2.0)::Dict{Int64,Array{Int64}}
+    @info("Partitioning the percolation states")
+    partition::Dict{Int64,Array{Int64}} = Dict{Float64,Array{Int64}}()
+    n::Int64 = lastindex(percolation_states)
+    #k::Int64 = 0
+    #range::Tuple{Float64,Float64} = Tuple{Float64,Float64}(0.,0.)
+    #eps::Float64 = 0.000000001
+    #partition_index::Int64 = 0
+    state_partition_index::Int64 = 0
+    min_inv_state::Float64 = 0
+    partition_number::Int64 = 0
+    for i in 1:n
+        min_inv_state = min(1. /percolation_states[i],n)
+        state_partition_index = trunc(Int64, log(alpha,min_inv_state)+1)
+
+        if haskey(partition,state_partition_index)
+            push!(partition[state_partition_index],i)
+        else
+            partition[state_partition_index] = [i]
+            partition_number += 1
+        end
+    end
+    @info("Number of partitions "*string(partition_number))
+    return partition
+end
+
+
+

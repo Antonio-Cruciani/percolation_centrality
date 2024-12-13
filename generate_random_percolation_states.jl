@@ -17,6 +17,4 @@ for ds in datasets
     perc = random_percolations(nv(g))
     ds_name = string(split(ds,".txt")[1])
     save_percolation_array(ds_name,perc)
-
-
 end

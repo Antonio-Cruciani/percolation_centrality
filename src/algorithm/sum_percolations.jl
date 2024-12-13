@@ -26,6 +26,28 @@ function random_percolations(n::Int64)::Array{Float64}
     return Array{Float64}([rand() for _ in 1:n])
 end
 
+function custom_percolations(n::Int64,target,ranges::Array{Int64})::Array{Float64}
+    @assert sum(ranges) == n "the sum of the ranges must sum to n"
+    percolations::Array{Float64} = zeros(Float64,n)
+    start = 1
+    end_v = ranges[1]
+    k = 1
+    for i in 1:lastindex(ranges)
+        if i > 1
+            start = k
+            end_v = k + ranges[i] -1
+        end
+        for j in start:end_v
+            if target[i] == "r"
+                percolations[j] = rand()
+            else
+                percolations[j] = target[i]
+            end
+            k+=1
+        end
+    end
+    return percolations
+end
 
 function percolation_differences(percolation_states,n::Int64)::Tuple{Float64,Dict{Int64,Float64}}
     sum::Float64 = 0.0
