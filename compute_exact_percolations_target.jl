@@ -3,12 +3,14 @@ include("src/PERC.jl")
 # Undirected
 
 
-datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges","02_email_enron", "03_ca_astroph","07_large_twitch_edges" ,"10_flickr"]
-directed = false
+
 
 separator = "\t"
 percolation_path = "percolation_states/"
 graphs_path = "graphs/"
+#=
+datasets = ["00_hiv.txt","00_ego-fb-combined-N.txt","01_musae_facebook_edges","02_email_enron", "03_ca_astroph","07_large_twitch_edges" ,"10_flickr"]
+directed = false
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
@@ -22,7 +24,7 @@ for ds in datasets
     save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 
 end
-#=
+=#
 # Directed
 #datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt"]
 datasets = [ "15_cit_hepph" ,"14_p2p_gnutella31","11_soc_epinions" ,"12_soc_slashdot","04_web_notredame" ,"06_web_google","08_web_berkstan"  ,"09_italian_twitter","05_wiki_talk","13_soc_pokec.txt"]                 
@@ -45,4 +47,3 @@ end
 
 
 
-=#
