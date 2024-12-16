@@ -22,7 +22,7 @@ function _random_path!(sg::static_graph,n::Int64,q::Array{Int64},ball::Array{Int
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
     cur_edge::UInt64 = 0
-    random_edge::UInt32 = 0;
+    random_edge::UInt32 = 0
     s::Int64 = sample(1:n)
     z::Int64 = sample(1:n)
     x::Int64  = 0

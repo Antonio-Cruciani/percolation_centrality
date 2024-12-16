@@ -241,3 +241,90 @@ function theoretical_error_bound(tilde_b::Array{Float64},tb::Array{Float64}, sam
     end
     return maximum(errors)
 end
+
+function sample_couples(nodes::Array{Int64},X::Array{Float64},normalizer::Float64)::Tuple{Int64,Int64}
+    s::Int64 = 0
+
+
+
+end
+
+
+@inline function weighted_sample_kappa_source(X::Array{Float64})::Int64
+    n::Int64 = length(X)
+
+    # Sort X and keep track of indices
+    sorted_indices::Array{Int64} = sortperm(X)
+    sorted_X::Array{Float64} = X[sorted_indices]
+
+    # Compute cumulative sums of sorted X
+    prefix_sum::Float64 = cumsum(sorted_X)
+    s::Int64 = -1
+    # Compute weights using efficient max(0, X[s] - X[i]) 
+    weights::Array{Float64} = zeros(Float64,n)
+    for rank in 1:n
+        s = sorted_indices[rank]
+        # Contribution of values less than X[s]
+        weights[s] += (rank - 1) * sorted_X[rank] - (rank > 1 ? prefix_sum[rank - 1] : 0)
+        # Contribution of values greater than X[s]
+        weights[s] += (prefix_sum[end] - prefix_sum[rank]) - (n - rank) * sorted_X[rank]
+    end
+
+    # Normalize weights to probabilities
+    total_weight::Float64 = sum(weights)
+    probabilities::Array{Float64} = weights / total_weight
+
+    # Use weighted sampling
+    return sample(1:n, Weights(probabilities))
+end
+
+
+@inline function weighted_sample_kappa(X::Array{Float64})::Tuple{Int64,Int64}
+    n::Int64 = length(X)
+
+    # Sort X and keep track of indices
+    sorted_indices::Array{Int64} = sortperm(X)
+    sorted_X::Array{Float64} = X[sorted_indices]
+
+    # Compute cumulative sums of sorted X
+    prefix_sum::Array{Float64} = cumsum(sorted_X)
+
+    # Compute weights using efficient max(0, X[s] - X[i]) logic
+    weights::Array{Float64} = zeros(Float64,n)
+    for rank in 1:n
+        s = sorted_indices[rank]
+        # Contribution of values less than X[s]
+        weights[s] += (rank - 1) * sorted_X[rank] - (rank > 1 ? prefix_sum[rank - 1] : 0)
+        # Contribution of values greater than X[s]
+        weights[s] += (prefix_sum[end] - prefix_sum[rank]) - (n - rank) * sorted_X[rank]
+    end
+
+    # Normalize weights to probabilities
+    total_weight::Float64 = sum(weights)
+    probabilities::Array{Float64} = weights / total_weight
+
+    # Use weighted sampling to select s
+    s::Int64 = sample(1:n, Weights(probabilities))
+
+    # Compute conditional probabilities for z given s
+    conditional_weights::Array{Float64} = zeros(Float64,n)
+    for j in 1:n
+        if j != s
+            conditional_weights[j] = max(0, X[s] - X[j])
+        end
+    end
+
+    # Normalize conditional weights
+    total_conditional_weight::Float64 = sum(conditional_weights)
+    conditional_probabilities::Array{Float64} = Array{Float64}([])
+    if total_conditional_weight > 0
+        conditional_probabilities = conditional_weights / total_conditional_weight
+    else
+        conditional_probabilities = fill(1.0 / (n - 1), n)  # Handle edge case where all weights are zero
+    end
+
+    # Use weighted sampling to select z
+    z::Int64 = sample(1:n, Weights(conditional_probabilities))
+
+    return s, z
+end
