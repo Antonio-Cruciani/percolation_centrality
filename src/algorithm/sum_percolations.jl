@@ -26,6 +26,43 @@ function random_percolations(n::Int64)::Array{Float64}
     return Array{Float64}([rand() for _ in 1:n])
 end
 
+function custom_percolation_randomized(n::Int64,rnd_size::Int64,eps_size::Int64,zero_size::Int64,one_size::Int64,epsilon::Float64)::Array{Float64}
+    @assert n == rnd_size + eps_size + zero_size + one_size "the sum of the ranges must sum to n"
+    percolations::Array{Float64} = zeros(Float64,n)
+    indexes::Dict{Int64,Int16} = Dict(i => 0 for i in 1:n)
+    if rnd_size > 0
+        rnd_indexes::Array{Int64}  = sample(collect(keys(indexes)),rnd_size,replace = false)
+        for e in rnd_indexes
+            percolations[e] = rand()
+            delete!(indexes, e)
+        end
+    end
+    if eps_size > 0
+        eps_indexes::Array{Int64} = sample(collect(keys(indexes)),eps_size,replace = false)
+        for e in eps_indexes
+            percolations[e] = epsilon
+            delete!(indexes, e)
+        end
+    end
+    # Can be removed 
+    if zero_size > 0
+        zero_indexes::Array{Int64} = sample(collect(keys(indexes)),zero_size,replace = false)
+        for e in zero_indexes
+            percolations[e] = 0.0
+            delete!(indexes, e)
+        end
+    end
+    if one_size > 0
+        one_indexes::Array{Int64} = sample(collect(keys(indexes)),one_size,replace = false)
+        for e in one_indexes
+            percolations[e] = 1.0
+            delete!(indexes, e)
+        end
+    end
+    return percolations
+end
+
+
 function custom_percolations(n::Int64,target,ranges::Array{Int64})::Array{Float64}
     @assert sum(ranges) == n "the sum of the ranges must sum to n"
     percolations::Array{Float64} = zeros(Float64,n)

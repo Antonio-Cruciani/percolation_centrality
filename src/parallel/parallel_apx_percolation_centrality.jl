@@ -956,7 +956,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
         sampled_so_far += sample_i
         B_vectorized = reduce_dictionary(local_B)
         if length(B_vectorized)>0
-            omega = compute_xi(B_vectorized,sample_size_schedule[j])
+            omega = compute_xi(B_vectorized .*[n*(n-1)],sample_size_schedule[j])
             delta_i = delta/2^k
             xi = 2*omega + (log(3/delta_i)+sqrt((log(3/delta_i)+4*sample_size_schedule[j]*omega)*log(3/delta_i)))/sample_size_schedule[j]  + sqrt(log(3/delta_i)/(2*sample_size_schedule[j]))
         else
@@ -971,7 +971,7 @@ function parallel_estimate_percolation_centrality_era(g,percolation_states::Arra
         end
 
     end
-    final_B_1 = reduce(+,local_B_1) .*[1/sample_size_schedule[end]]
+    final_B_1 = reduce(+,local_B_1) .*[(n*(n-1))/sample_size_schedule[end]]
     finish_time::Float64 = time()-start_time
     @info("Converged! Sampled "*string(sample_size_schedule[end])*"/"*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
     flush(stderr)
