@@ -245,7 +245,8 @@ function parallel_estimate_percolation_centrality(g,percolation_states::Array{Fl
             vs_active = [i for i in 1:n]
             @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
                 Threads.@spawn for u in @view(vs_active[task_range])
-                    _reduce_data!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length)
+                    #_reduce_data!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length)
+                    _reduce_data_b!(u,ntasks,percolation_centrality,wimpy_variance,shortest_path_length,mcrade,final_percolation_centrality,final_wimpy_variance,final_shortest_path_length,final_mcrade,mc_trials)
                 end
             end
             #println("Iteration "*string(iteration_index)*" reduce time "*string(time()-r_time))
@@ -500,8 +501,11 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
     final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
     #mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
     final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
-    tmp_perc_states::Array{Float64} = copy(percolation_states)
-    percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     #betweenness::Array{Float64} = zeros(Float64,n)
     start_time::Float64 = time()
     emp_wimpy_node::Float64 = 0.0
@@ -787,7 +791,7 @@ function parallel_estimate_percolation_centrality_lock(g,percolation_states::Arr
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
     flush(stderr)
-    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time,time()-time_estimation
+    return final_percolation_centrality .*[n*(n-1)/num_samples],num_samples,max_num_samples,time()-start_time,time()-time_estimation
 
 end
 
@@ -1246,7 +1250,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size(g,percolatio
     finish_time::Float64 = time()-start_time
     @info("Completed! Sampled "*string(max_sample)*" couples in "*string(round(finish_time;digits = 4))*" seconds ")
     flush(stderr)
-    return final_percolation_centrality.*[1/max_sample],max_sample,finish_time
+    return final_percolation_centrality.*[(n*(n-1))/max_sample],max_sample,finish_time
 end
 
 

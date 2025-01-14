@@ -523,7 +523,7 @@ function _parallel_random_path!(sg::static_graph,n::Int64,percolation_centrality
     return nothing
 end
 
-function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Array{Float64}},shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false)
+function _parallel_random_path_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}} ,shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false)
 
     q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)

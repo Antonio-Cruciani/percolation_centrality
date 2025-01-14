@@ -111,9 +111,9 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
     
     if second_phase
         avg_diam_upperbound::Float64 = upper_bound_average_diameter(delta_for_progressive_bound,diam,tdd,sample_size,false)
-        top1_est_bc::Float64 = maximum(percolation)/num_samples_d
+        top1_est_bc::Float64 = maximum(percolation)*n*(n-1)/num_samples_d
         top1bc_upperbound::Float64 = upper_bound_top_1_bc(top1_est_bc,delta_for_progressive_bound,sample_size)
-        wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(maximum(wv)/num_samples_d,delta_for_progressive_bound,sample_size)
+        wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(maximum(wv)*(n*(n-1))^2/num_samples_d,delta_for_progressive_bound,sample_size)
         max_num_samples::Int64 = trunc(Int,upper_bound_samples(top1bc_upperbound,wimpy_var_upper_bound,avg_diam_upperbound,eps,delta_for_progressive_bound))
         if last_stopping_samples > max_num_samples
             last_stopping_samples = max_num_samples
@@ -157,7 +157,7 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
         end
         mcera_avg = mcera_avg/num_samples_d
         mcera_partition_avg[i] = mcera_avg
-        sup_emp_wimpy_var = sup_empwvar_partition[i]/num_samples_d
+        sup_emp_wimpy_var = sup_empwvar_partition[i]*(n*(n-1))^2/num_samples_d
         current_eps = epsilon_mcrade(sup_emp_wimpy_var,mcera_avg,delta_each_partition,num_samples_d,mc_trials)
         epsilon_partition[i] = current_eps
     end
@@ -242,12 +242,7 @@ function theoretical_error_bound(tilde_b::Array{Float64},tb::Array{Float64}, sam
     return maximum(errors)
 end
 
-function sample_couples(nodes::Array{Int64},X::Array{Float64},normalizer::Float64)::Tuple{Int64,Int64}
-    s::Int64 = 0
 
-
-
-end
 
 
 @inline function weighted_sample_kappa_source(X::Array{Float64})::Int64
