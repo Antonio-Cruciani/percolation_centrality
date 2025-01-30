@@ -3,8 +3,12 @@ include("src/PERC.jl")
 
 #Common parameters
 delta = 0.1
-epsilon_list = [0.1,0.07,0.05,0.01,0.005]
-ss_save = [1,2,3,4,5]
+#epsilon_list = [0.1,0.07,0.05,0.01,0.005]
+#ss_save = [1,2,3,4,5]
+
+epsilon_list = [0.001,0.0005]
+ss_save = [6,7]
+
 run = 10
 
 #=
@@ -16,7 +20,7 @@ graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
 
-#=
+
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt","07_large_twitch_edges.txt","10_flickr.txt"]
 #datasets = ["com-youtube.ungraph.txt","com-lj.ungraph.txt","com-orkut.ungraph.txt"]
 
@@ -40,7 +44,7 @@ for ds in datasets
     end
 end
 
-=#
+#=
 
 
 # Directed
@@ -67,3 +71,4 @@ for ds in datasets
     end
 end
 
+=#
