@@ -9,7 +9,7 @@ delta = 0.1
 epsilon_list = [0.001,0.0005]
 ss_save = [6,7]
 
-run = 10
+run = 1
 
 #=
 graphs_path = "/home/pasquini/My_nas/data_percolation/graphs/"
@@ -48,7 +48,8 @@ end
 
 
 # Directed
-datasets = ["15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt","05_wiki_talk.txt","09_italian_twitter.txt","13_soc_pokec.txt"]
+#"15_cit_hepph.txt","14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt",
+datasets = ["06_web_google.txt","08_web_berkstan.txt","05_wiki_talk.txt","09_italian_twitter.txt","13_soc_pokec.txt"]
 
 
 directed = true
