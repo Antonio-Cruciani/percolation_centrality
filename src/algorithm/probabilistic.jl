@@ -111,9 +111,12 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
     
     if second_phase
         avg_diam_upperbound::Float64 = upper_bound_average_diameter(delta_for_progressive_bound,diam,tdd,sample_size,false)
-        top1_est_bc::Float64 = maximum(percolation)*n*(n-1)/num_samples_d
+        #        top1_est_bc::Float64 = maximum(percolation)*n*(n-1)/num_samples_d
+        top1_est_bc::Float64 = maximum(percolation)/num_samples_d
         top1bc_upperbound::Float64 = upper_bound_top_1_bc(top1_est_bc,delta_for_progressive_bound,sample_size)
-        wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(maximum(wv)*(n*(n-1))^2/num_samples_d,delta_for_progressive_bound,sample_size)
+        #wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(maximum(wv)*(n*(n-1))^2/num_samples_d,delta_for_progressive_bound,sample_size)
+
+        wimpy_var_upper_bound::Float64 = upper_bound_top_1_bc(maximum(wv)/num_samples_d,delta_for_progressive_bound,sample_size)
         max_num_samples::Int64 = trunc(Int,upper_bound_samples(top1bc_upperbound,wimpy_var_upper_bound,avg_diam_upperbound,eps,delta_for_progressive_bound))
         if last_stopping_samples > max_num_samples
             last_stopping_samples = max_num_samples
@@ -157,12 +160,13 @@ function _check_stopping_condition!(percolation::Array{Float64},wv::Array{Float6
         end
         mcera_avg = mcera_avg/num_samples_d
         mcera_partition_avg[i] = mcera_avg
-        sup_emp_wimpy_var = sup_empwvar_partition[i]*(n*(n-1))^2/num_samples_d
+        sup_emp_wimpy_var = sup_empwvar_partition[i]/num_samples_d
         current_eps = epsilon_mcrade(sup_emp_wimpy_var,mcera_avg,delta_each_partition,num_samples_d,mc_trials)
         epsilon_partition[i] = current_eps
     end
     sup_eps::Float64 = 0.0
     for i in 1:number_of_non_empty_partitions
+        #println("EPS PARTITION ",i," eps = ",epsilon_partition[i])
         sup_eps = max(sup_eps,epsilon_partition[i])
     end
     if sup_eps <= eps
@@ -180,8 +184,11 @@ end
 
 function epsilon_mcrade(sup_emp_wimpy_var,mcera,delta,num_samples,mc_trials)
     mcera = max(mcera,0.0)
+    #println("MCERA ",mcera)
     log_term_mcrade::Float64 = log(5/delta)/num_samples
+    #println("logterm ",log_term_mcrade)
     var_ub::Float64 = sup_emp_wimpy_var +log_term_mcrade+sqrt(log_term_mcrade^2 +2 * log_term_mcrade*sup_emp_wimpy_var) 
+    #println("VAR UB ",var_ub)
     era_ub::Float64 = mcera + sqrt(4*sup_emp_wimpy_var *log_term_mcrade / mc_trials)
     ra_ub::Float64 = era_ub + log_term_mcrade + sqrt(log_term_mcrade^2 + 2*log_term_mcrade * era_ub)
     eps_ub::Float64 = 2* ra_ub+ sqrt(2*log_term_mcrade*(var_ub+4*ra_ub))
@@ -274,7 +281,151 @@ end
 end
 
 
-@inline function weighted_sample_kappa(X::Array{Float64})::Tuple{Int64,Int64}
+function weighted_sample_kappa_slow(X::Vector{Float64})::Tuple{Int64, Int64}
+    n = length(X)
+
+    # Collect all valid (s, z) pairs and their weights
+    valid_pairs = Tuple{Int, Int}[]
+    weights = Float64[]
+
+    for s in 1:n
+        for z in 1:n
+            if s != z
+                w = max(0.0, X[s] - X[z])
+                if w > 0
+                    push!(valid_pairs, (s, z))
+                    push!(weights, w)
+                end
+            end
+        end
+    end
+
+    if isempty(weights)
+        error("All kernel weights are zero — cannot sample from joint distribution.")
+    end
+
+    dist = Weights(weights)
+    idx = sample(1:length(valid_pairs), dist)
+    return valid_pairs[idx]
+end
+
+
+function build_outgoing_weights(X::Vector{Float64})
+    n = length(X)
+    sorted_indices = sortperm(X)
+    sorted_X = X[sorted_indices]
+    prefix_sum = cumsum(sorted_X)
+
+    # Compute total outgoing kernel mass for each node
+    weights = zeros(Float64, n)
+    for rank in 1:n
+        s = sorted_indices[rank]
+        x_s = sorted_X[rank]
+
+        # Left: sum_{z: X[z] < X[s]} max(0, x_s - x_z)
+        weights[s] += (rank - 1) * x_s - (rank > 1 ? prefix_sum[rank - 1] : 0)
+
+        # Right: sum_{z: X[z] > X[s]} max(0, x_s - x_z) = 0
+        # (since x_s - x_z < 0) → no need to add
+    end
+    return weights
+end
+
+
+function weighted_sample_kappa(X::Vector{Float64})::Tuple{Int, Int}
+    n = length(X)
+    weights::Vector{Float64} = build_outgoing_weights(X)
+    # Step 1: sample s ∝ outgoing kernel mass
+    valid_s = findall(w -> w > 0, weights)
+    if isempty(valid_s)
+        error("No valid s with positive outgoing kernel mass.")
+    end
+    s = valid_s[sample(Weights(weights[valid_s]))]
+
+    # Step 2: sample z ≠ s ∝ max(0, X[s] - X[z])
+    cond_weights = [s == z ? 0.0 : max(0, X[s] - X[z]) for z in 1:n]
+    z = sample(1:n, Weights(cond_weights))
+
+    return s, z
+end
+
+
+
+
+
+# Rejection sampling
+function weighted_sample_kappa_rejection(X::Vector{Float64})::Tuple{Int, Int}
+    n = length(X)
+    min_val = minimum(X)
+
+    while true
+        s = rand(1:n)
+        if X[s] <= min_val
+            continue  # skip s if it has no mass to push
+        end
+
+        # Compute conditional weights for z
+        weights_z = [s == z ? 0.0 : max(0, X[s] - X[z]) for z in 1:n]
+        total = sum(weights_z)
+        if total == 0.0
+            continue  # rare, but safe check
+        end
+
+        z = sample(1:n, Weights(weights_z))
+        return s, z
+    end
+end
+
+function weighted_sample_kappa_idk(X::Vector{Float64})::Tuple{Int64, Int64}
+    n = length(X)
+
+    # Step 1: Sort X to compute outgoing kernel mass efficiently
+    sorted_indices = sortperm(X)
+    sorted_X = X[sorted_indices]
+    prefix_sum = cumsum(sorted_X)
+
+    # Compute total outgoing mass for each s: sum_{z ≠ s} max(0, X[s] - X[z])
+    weights = zeros(Float64, n)
+    for rank in 1:n
+        s = sorted_indices[rank]
+        # Left (values < X[s])
+        weights[s] += (rank - 1) * sorted_X[rank] - (rank > 1 ? prefix_sum[rank - 1] : 0)
+        # Right (values > X[s])
+        weights[s] += (prefix_sum[end] - prefix_sum[rank]) - (n - rank) * sorted_X[rank]
+    end
+
+    # Filter valid s where outgoing mass is positive
+    valid_s = findall(w -> w > 0, weights)
+    if isempty(valid_s)
+        error("No valid s with positive outgoing kernel mass.")
+    end
+
+    # Sample s ∝ outgoing mass
+    dist_s = Weights(weights[valid_s])
+    s_idx = sample(1:length(valid_s), dist_s)
+    s = valid_s[s_idx]
+
+    # Step 2: Sample z ≠ s ∝ max(0, X[s] - X[z])
+    conditional_weights = zeros(Float64, n)
+    for z in 1:n
+        if z != s
+            conditional_weights[z] = max(0, X[s] - X[z])
+        end
+    end
+
+    total_conditional = sum(conditional_weights)
+    if total_conditional == 0
+        error("No valid z for selected s.")
+    end
+
+    dist_z = Weights(conditional_weights)
+    z = sample(1:n, dist_z)
+
+    return s, z
+end
+
+
+@inline function weighted_sample_kappa_tocheck(X::Array{Float64})::Tuple{Int64,Int64}
     n::Int64 = length(X)
 
     # Sort X and keep track of indices
@@ -297,7 +448,7 @@ end
     # Normalize weights to probabilities
     total_weight::Float64 = sum(weights)
     probabilities::Array{Float64} = weights / total_weight
-
+    
     # Use weighted sampling to select s
     s::Int64 = sample(1:n, Weights(probabilities))
 
@@ -320,6 +471,69 @@ end
 
     # Use weighted sampling to select z
     z::Int64 = sample(1:n, Weights(conditional_probabilities))
+
+    return s, z
+end
+
+
+# There is an error here you need to be sure that the source node has positive percolation i.e. >0
+@inline function weighted_sample_kappa_dep(X::Array{Float64})::Tuple{Int64, Int64}
+    n = length(X)
+
+    # Sort X and keep track of indices
+    sorted_indices = sortperm(X)
+    sorted_X = X[sorted_indices]
+
+    # Compute cumulative sums of sorted X
+    prefix_sum = cumsum(sorted_X)
+
+    # Compute weights for sampling s
+    weights = zeros(Float64, n)
+    for rank in 1:n
+        s = sorted_indices[rank]
+        # Contribution from smaller values
+        weights[s] += (rank - 1) * sorted_X[rank] - (rank > 1 ? prefix_sum[rank - 1] : 0)
+        # Contribution from larger values
+        weights[s] += (prefix_sum[end] - prefix_sum[rank]) - (n - rank) * sorted_X[rank]
+    end
+
+    # Filter out nodes with zero weight
+    valid_indices = findall(w -> w > 0, weights)
+    if isempty(valid_indices)
+        error("All source weights are zero — cannot sample a valid (s,z) pair")
+    end
+
+    filtered_weights = weights[valid_indices]
+    probabilities = filtered_weights / sum(filtered_weights)
+
+    # Sample s from valid indices
+    s_idx = sample(1:length(valid_indices), Weights(probabilities))
+    s = valid_indices[s_idx]
+
+    # Compute conditional weights for z given s
+    conditional_weights = zeros(Float64, n)
+    for j in 1:n
+        if j != s
+            conditional_weights[j] = max(0, X[s] - X[j])
+        end
+    end
+
+    total_conditional_weight = sum(conditional_weights)
+    conditional_probabilities = zeros(Float64, n)
+
+    if total_conditional_weight > 0
+        conditional_probabilities = conditional_weights / total_conditional_weight
+    else
+        # Fallback: uniform sampling over j ≠ s
+        for j in 1:n
+            if j != s
+                conditional_probabilities[j] = 1.0 / (n - 1)
+            end
+        end
+    end
+
+    # Sample z using conditional probabilities
+    z = sample(1:n, Weights(conditional_probabilities))
 
     return s, z
 end

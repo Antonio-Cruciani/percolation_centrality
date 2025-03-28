@@ -25,6 +25,96 @@ end
 function random_percolations(n::Int64)::Array{Float64}
     return Array{Float64}([rand() for _ in 1:n])
 end
+function update_percolation!(x::Array{Float64},u::Int64,val::Float64,lk::ReentrantLock)
+    begin
+        lock(lk)
+        try
+            x[u] = max(x[u],val)
+        finally
+            unlock(lk)
+        end
+    end
+    return nothing
+end
+
+function simulate_spreading(g,k::Int64,max_distance::Int64,mass::Float64)::Array{Float64}
+    n::Int64 = nv(g)
+    x::Array{Float64} = zeros(Float64,n)
+    ntasks::Int64 = nthreads()
+    task_size = cld(k, ntasks)
+    vs_active = [i for i in 1:k]
+    lk::ReentrantLock = ReentrantLock()
+
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:k, task_size))
+        Threads.@spawn for _ in @view(vs_active[task_range])
+            s::Int64 = sample(1:n)
+            q::Queue{Int64} = Queue{Int64}()
+            dist::Array{Int64} = zeros(Int64,n)
+            ball::Array{Int16} = zeros(Int16,n)
+            enqueue!(q,s)
+            dist[s] = 0
+            ball[s] = 1
+            val::Float64 = 1.0
+            update_percolation!(x,s,val,lk)
+            while length(q)!= 0
+                w = dequeue!(q)
+                if dist[w] < max_distance
+                    for v in outneighbors(g,w)
+                        if ball[v] == 0
+                            dist[v] = dist[w] + 1
+                            val = 1.0/(mass^dist[v])
+                            update_percolation!(x,v,val,lk)
+                            ball[v] = 1
+                            enqueue!(q,v)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return x
+end
+
+
+function attach_gadget(g,k::Int64)
+    n::Int64 = nv(g)
+    x::Array{Float64} = zeros(Float64,n+k)  
+    q = SimpleGraph(1)
+    if is_directed(g)
+        q = SimpleDiGraph(n+k)
+    else
+        q = SimpleGraph(n+k)
+    end
+    for i in n+1:n+k-1
+        add_edge!(q,i,i+1)
+        if is_directed(g)
+            add_edge!(q,i+1,i)
+        end
+    end
+    for _ in 1:log(n)
+        u = sample(1:n)
+        add_edge!(q,u,n+1)
+        if is_directed(g)
+            add_edge!(q,n+1,u)
+        end
+    end
+    
+    f = union(g,q)
+    for i in 1:n
+        x[i] = 0.0
+    end
+    j::Int64 = 1
+    for i in n+1:n+k
+        if j < k/2
+            x[i] = 0.0
+        else
+            x[i] = 1.0
+        end
+        j += 1
+    end
+    return f,x
+end
+
 
 function custom_percolation_randomized(n::Int64,rnd_size::Int64,eps_size::Int64,zero_size::Int64,one_size::Int64,epsilon::Float64)::Array{Float64}
     @assert n == rnd_size + eps_size + zero_size + one_size "the sum of the ranges must sum to n"
