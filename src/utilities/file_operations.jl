@@ -203,6 +203,26 @@ function save_results(nn::String, cn::String, c::Array{Float64}, t::Float64)
     end
 end
 
+function save_results_new(nn::String, cn::String, c::Array{Float64}, t::Float64,dv::Float64)
+    if (length(c) > 0)
+        mkpath("scores/" * nn * "/")
+        save_centrality_values("scores/" * nn * "/" * cn * ".txt", c)
+        mkpath("times/" * nn * "/")
+        f = open("times/" * nn * "/time_" * cn * ".txt", "w")
+        write(f, string(t))
+        close(f)
+        mkpath("dv/"*nn*"/")
+        f = open("dv/" * nn * "/dv_" * cn * ".txt", "w")
+        write(f, string(dv))
+        close(f)
+    else
+        mkpath("times/" * nn * "/")
+        f = open("times/" * nn * "/time_" * cn * ".txt", "w")
+        write(f, "-1.0\n")
+        close(f)
+    end
+end
+
 function read_centrality_values(file_name::String)::Array{Float64}
     @assert isfile(file_name) "The centrality value file does not exist "*file_name
     f::IOStream = open(file_name, "r")
@@ -235,3 +255,5 @@ function read_distance_measures(nn::String)
   
     return res
 end
+
+

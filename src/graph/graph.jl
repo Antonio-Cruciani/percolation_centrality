@@ -97,3 +97,13 @@ function incidency_list(g)::Array{Array{Int64}}
     end
     return in_list
 end
+
+
+function save_graph(g,nn,sep::String = " ")
+    mkpath("components/")
+    f = open("components/" * nn * ".txt", "w")
+    for e in collect(edges(g))
+        write(f,string(src(e))*sep*string(dst(e))*"\n")
+    end
+    close(f)
+end
