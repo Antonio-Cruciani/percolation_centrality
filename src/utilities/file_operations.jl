@@ -187,6 +187,42 @@ function save_results_progressive_sampling(nn::String,cn::String, c::Array{Float
     end
 end
 
+function save_results_progressive_sampling_new(nn::String,cn::String, c::Array{Float64}, ss::Int64, t::Float64,starting_ss::Int64,dv::Float64,xi::Float64 = -1.0,est_time::Float64 = -1.0,output_path::String = "")
+    if est_time == -1.0
+        if (length(c) > 0)
+            mkpath(output_path*"scores/" * nn * "/")
+            append_centrality_values(output_path*"scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
+            mkpath(output_path*"times/" * nn * "/")
+            f = open(output_path*"times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, string(round(t; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
+            close(f)
+        else
+            mkpath(output_path*"times/" * nn * "/")
+            f = open(output_path*"times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, "-1.0 -1.0 -1.0 -1.0,-1.0")
+            close(f)
+        end
+    else
+        if (length(c) > 0)
+            mkpath(output_path*"scores/" * nn * "/")
+            append_centrality_values(output_path*"scores/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", c)
+            mkpath(output_path*"times/" * nn * "/")
+            f = open(output_path*"times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, string(round(t; digits=4))*" "*string(round(est_time; digits=4)) * " " * string(ss) *" "*string(xi) *"\n")
+            close(f)
+            mkpath("dv/"*nn*"/")
+            f = open("dv/" * nn * "/"*cn *"_"*string(starting_ss)* ".txt", "a")
+            write(f, string(dv)*"\n")
+            close(f)
+        else
+            mkpath(output_path*"times/" * nn * "/")
+            f = open(output_path*"times/" * nn * "/"*cn*"_"*string(starting_ss)*".txt", "a")
+            write(f, "-1.0 -1.0 -1.0 -1.0 -1.0")
+            close(f)
+        end
+    end
+end
+
 function save_results(nn::String, cn::String, c::Array{Float64}, t::Float64)
     if (length(c) > 0)
         mkpath("scores/" * nn * "/")

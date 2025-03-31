@@ -4,6 +4,8 @@ function parallel_estimate_percolation_centrality_new_lock(g,percolation_states:
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
+    dv,_,_,_=compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
     @info("----------------------------------------| Stats |--------------------------------------------------")
     @info("Analyzing graph")
     @info("Number of nodes "*string(n))
@@ -13,6 +15,7 @@ function parallel_estimate_percolation_centrality_new_lock(g,percolation_states:
     @info("Minimum Percolated state "*string(minimum(percolation_states)))
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta)*" Alpha "*string(alpha_sampling)*" MC Trials "*string(mc_trials)*" Empirical peeling param. "*string(empirical_peeling_a))
+    @info("Maximum d_v "*string(max_d_v))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
     flush(stderr)
@@ -239,7 +242,7 @@ function parallel_estimate_percolation_centrality_new_lock(g,percolation_states:
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
     flush(stderr)
-    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time,time()-time_estimation
+    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,max_d_v,time()-start_time,time()-time_estimation
 
 end
 
