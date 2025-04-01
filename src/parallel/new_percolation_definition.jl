@@ -242,7 +242,7 @@ function parallel_estimate_percolation_centrality_new_lock(g,percolation_states:
 
     @info("Estimation completed "*string(round(time() - start_time; digits=4)))
     flush(stderr)
-    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,max_d_v,time()-start_time,time()-time_estimation
+    return final_percolation_centrality .*[1/num_samples],num_samples,max_num_samples,time()-start_time,time()-time_estimation
 
 end
 
@@ -580,6 +580,8 @@ function parallel_estimate_percolation_centrality_era_new(g,percolation_states::
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
+    dv,_,_,_=compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
     @info("----------------------------------------| Stats |--------------------------------------------------")
     @info("Analyzing graph")
     @info("Number of nodes "*string(n))
@@ -588,6 +590,7 @@ function parallel_estimate_percolation_centrality_era_new(g,percolation_states::
     @info("Maximum Percolated state "*string(maximum(percolation_states)))
     @info("Minimum Percolated state "*string(minimum(percolation_states)))
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Maximum d_v "*string(max_d_v))
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
@@ -787,6 +790,8 @@ function parallel_estimate_percolation_centrality_fixed_sample_size_new(g,percol
     n::Int64 = nv(g)
     m::Int64 = ne(g)
     directed::Bool = is_directed(g)
+    dv,_,_,_=compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
     @info("----------------------------------------| Stats |--------------------------------------------------")
     @info("Analyzing graph")
     @info("Number of nodes "*string(n))
@@ -796,6 +801,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size_new(g,percol
     @info("Minimum Percolated state "*string(minimum(percolation_states)))
     @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
     @info("Epsilon "*string(epsilon)*" Delta "*string(delta))
+    @info("Maximum d_v "*string(max_d_v))
     @info("Using "*string(nthreads())* " Threads")
     @info("---------------------------------------------------------------------------------------------------")
     flush(stderr)
@@ -867,54 +873,55 @@ function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolat
     while (s == z)
         z = sample(1:nv(g))
     end
-   
-    enqueue!(q,s)
-    dist[s] = 0
-    n_paths[s] = 1
-    ball[s] = 1
-    while length(q) != 0
-        w = dequeue!(q)
-        if dist[w] < d_z_min
-            for v in outneighbors(g,w)
-                if (ball[v] == 0)
-                    dist[v] = dist[w] +1
-                    ball[v] = 1
-                    n_paths[v] = n_paths[w]
-                    if (v == z)
-                        if dist[v] < d_z_min
-                            d_z_min = dist[v]
+    if percolation_states[s] > percolation_states[z]
+        enqueue!(q,s)
+        dist[s] = 0
+        n_paths[s] = 1
+        ball[s] = 1
+        while length(q) != 0
+            w = dequeue!(q)
+            if dist[w] < d_z_min
+                for v in outneighbors(g,w)
+                    if (ball[v] == 0)
+                        dist[v] = dist[w] +1
+                        ball[v] = 1
+                        n_paths[v] = n_paths[w]
+                        if (v == z)
+                            if dist[v] < d_z_min
+                                d_z_min = dist[v]
+                            end
+                            if length(q_backtrack) == 0
+                                enqueue!(q_backtrack,z)
+                            end
                         end
-                        if length(q_backtrack) == 0
-                            enqueue!(q_backtrack,z)
-                        end
+                        push!(pred[v],w)
+                        enqueue!(q,v)
+                    elseif (dist[v] == dist[w] + 1)
+                        n_paths[v] += n_paths[w]
+                        push!(pred[v],w)
                     end
-                    push!(pred[v],w)
-                    enqueue!(q,v)
-                elseif (dist[v] == dist[w] + 1)
-                    n_paths[v] += n_paths[w]
-                    push!(pred[v],w)
-                end
 
+                end
             end
         end
+        #backtrack
+        if length(q_backtrack) != 0
+            w = dequeue!(q_backtrack)
+            tot_weight = n_paths[z]
+            random_edge = rand(0:tot_weight-1)
+            cur_edge = 0
+            for p in pred[z]
+                cur_edge += n_paths[p]
+                if cur_edge > random_edge
+                    _backtrack_path!(s,z,p,path,n_paths,pred)
+                    break;
+                end
+            end
+            for w in path
+                percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[1])  
+            end
+        end  
     end
-    #backtrack
-    if length(q_backtrack) != 0
-        w = dequeue!(q_backtrack)
-        tot_weight = n_paths[z]
-        random_edge = rand(0:tot_weight-1)
-        cur_edge = 0
-        for p in pred[z]
-            cur_edge += n_paths[p]
-            if cur_edge > random_edge
-                _backtrack_path!(s,z,p,path,n_paths,pred)
-                break;
-            end
-        end
-        for w in path
-            percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[1])  
-        end
-    end  
 
    return nothing
 end
