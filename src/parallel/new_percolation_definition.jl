@@ -248,7 +248,7 @@ end
 
 
 
-function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}} ,shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false)
+function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}} ,shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false,uniform_sampling::Bool = false)
 
     #q::Array{Int64} = zeros(Int64,n)
     ball::Array{Int16} = zeros(Int16,n)
@@ -259,8 +259,16 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
     end_q::UInt32 = 1
     tot_weight::Int64 = 0
     cur_edge::UInt64 = 0
-    random_edge::UInt32 = 0;
-    s::Int64, z::Int64 = weighted_sample_kappa(percolation_states)
+    random_edge::UInt32 = 0
+    s::Int64 = sample(1:n)
+    z::Int64 = s
+    if !uniform_sampling
+        s,z = weighted_sample_kappa(percolation_states)
+    else
+        while (s == z)
+            z = sample(1:n)
+        end
+    end
     #println("s = ",s," percolation s ",percolation_states[s]," z = ",z," percolation z ",percolation_states[z])
     x::Int64  = 0
     y::Int64 = 0
@@ -430,9 +438,16 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 #println("PATH ",path)
                 if (j == 1)
                     path_length = length(path)
-                    shortest_path_length[path_length+1] +=1
-                    if path_length+2 > new_diam_estimate[1]
-                        new_diam_estimate[1] = path_length
+                    begin
+                        lock(lk)
+                        try
+                            shortest_path_length[path_length+1] +=1
+                            if path_length+2 > new_diam_estimate[1]
+                                new_diam_estimate[1] = path_length
+                            end
+                        finally 
+                            unlock(lk)
+                        end
                     end
                 end
                 for u in path
@@ -463,9 +478,13 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
             try
                 for u in keys(path_map)
                     pm_value = path_map[u]
+            
                   
                     percolation_value = pm_value/num_path_to_sample
 
+                    if uniform_sampling
+                        percolation_value =  percolation_value * (ramp(percolation_states[s],percolation_states[z])/percolation_data[1])  
+                    end
                     percolation_centrality[u] += percolation_value
                     #println(" percolation_centrality of  ",u," increasing by ",percolation_value)
                     #betweenness[u] += pm_value/num_path_to_sample
@@ -924,4 +943,123 @@ function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolat
     end
 
    return nothing
+end
+
+
+
+#Uniform and non Uniform Samplers Fixed Sample Size
+
+# Non-Uniform 
+
+
+function parallel_estimate_percolation_centrality_non_uniform(g,percolation_states::Array{Float64},sample_size::Int64,alpha_sampling::Float64 = 0.1)
+    @assert nv(g) == lastindex(percolation_states) "Length of the percolation state array must be the same as the number of nodes"
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    dv,_,_,_= compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Sample Size "*string(sample_size))
+    @info("Sampler : Non Uniform")
+    @info("Maximum d_v "*string(max_d_v))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stderr)
+    ntasks = nthreads()
+    sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    run_perc::Bool = true
+    mc_trials = 1
+    final_percolation_centrality::Array{Float64} = zeros(Float64,n)
+    #wimpy_variance::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
+    final_wimpy_variance::Array{Float64} = zeros(Float64,n)
+    #shortest_path_length::Array{Array{Int64}} = [zeros(Int64,n+1) for _ in 1:ntasks]
+    final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
+    #mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
+    final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    #betweenness::Array{Float64} = zeros(Float64,n)
+    start_time::Float64 = time()
+    final_new_diam_estimate::Array{Int64} = [100]
+    lk::ReentrantLock = ReentrantLock()
+    task_size = cld(sample_size, ntasks)
+    vs_active = [i for i in 1:sample_size]
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
+        Threads.@spawn for _ in @view(vs_active[task_range])
+            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,true)
+        end
+    end
+    finish_time::Float64 = time()-start_time
+    @info("Completed in "*string(round(finish_time,digits = 4))) 
+    flush(stderr)
+    return final_percolation_centrality .*[1/sample_size],sample_size,sample_size,finish_time,finish_time
+
+end
+
+
+
+function parallel_estimate_percolation_centrality_uniform(g,percolation_states::Array{Float64},sample_size::Int64,alpha_sampling::Float64 = 0.1)
+    @assert nv(g) == lastindex(percolation_states) "Length of the percolation state array must be the same as the number of nodes"
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    dv,_,_,_= compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Sample Size "*string(sample_size))
+    @info("Sampler : Uniform")
+    @info("Maximum d_v "*string(max_d_v))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stderr)
+    ntasks = nthreads()
+    sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    run_perc::Bool = true
+    mc_trials = 1
+    final_percolation_centrality::Array{Float64} = zeros(Float64,n)
+    #wimpy_variance::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
+    final_wimpy_variance::Array{Float64} = zeros(Float64,n)
+    #shortest_path_length::Array{Array{Int64}} = [zeros(Int64,n+1) for _ in 1:ntasks]
+    final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
+    #mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
+    final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    #betweenness::Array{Float64} = zeros(Float64,n)
+    start_time::Float64 = time()
+    final_new_diam_estimate::Array{Int64} = [100]
+    lk::ReentrantLock = ReentrantLock()
+    task_size = cld(sample_size, ntasks)
+    vs_active = [i for i in 1:sample_size]
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
+        Threads.@spawn for _ in @view(vs_active[task_range])
+            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,true,true)
+        end
+    end
+    finish_time::Float64 = time()-start_time
+    @info("Completed in "*string(round(finish_time,digits = 4))) 
+    flush(stderr)
+    return final_percolation_centrality .*[(n*(n-1))/sample_size],sample_size,sample_size,finish_time,finish_time
+
 end
