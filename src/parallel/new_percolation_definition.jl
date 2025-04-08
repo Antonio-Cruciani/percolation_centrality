@@ -257,9 +257,9 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
     pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
     #num_paths::Array{Int64} = zeros(Int64,n)
     end_q::UInt32 = 1
-    tot_weight::Int64 = 0
-    cur_edge::UInt64 = 0
-    random_edge::UInt32 = 0
+    tot_weight::UInt128 = 0
+    cur_edge::UInt128 = 0
+    random_edge::UInt128 = 0
     s::Int64 = sample(1:n)
     z::Int64 = s
     if !uniform_sampling
