@@ -416,9 +416,11 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 tot_weight += n_paths[p[1]] * n_paths[p[2]]
             end
             if (alpha_sampling > 0 && tot_weight > 1)
-                num_path_to_sample = trunc(Int64,floor(alpha_sampling * tot_weight))
+                num_path_to_sample = trunc(UInt128,floor(alpha_sampling * tot_weight))
             end
             num_paths = num_path_to_sample
+            #Debug
+            #println("Total Weight ", tot_weight," | PATHS TO SAMPLE: ",num_paths)
 
             for j in 1:num_path_to_sample
                 path = Array{Int64}([])

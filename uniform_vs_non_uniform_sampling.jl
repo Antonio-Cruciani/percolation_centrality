@@ -42,7 +42,9 @@ directed = true
 
 for ds in datasets
     gf = graphs_path*ds
-    g = load_graph(gf,directed,separator)
+    g = load_graph(gf,directed,separator)y_uniform(g,perc,sample_size)
+            save_results_progressive_sampling(ds_name,"uniform",y[1],y[2],y[4],ss_save[i],0.0,y[5],output_path)
+
     h,x = attach_gadget(g,component_size)
     ds_name = string(split(ds,".txt")[1])*"_"*string(component_size)
     save_percolation_array(ds_name,x)
@@ -85,7 +87,6 @@ end
 #datasets = ["12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
 
 datasets = ["08_web_berkstan.txt"]
-
 
 directed = true
 separator = "\t"
