@@ -10,14 +10,14 @@ run = 5
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
-datasets = ["00_hiv.txt"]
+#datasets = ["00_hiv.txt"]
 
 directed = false
 separator = "\t"
 
 mass = 4.0 
 max_distance = typemax(Int64)
-
+#=
 
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
 
@@ -56,11 +56,11 @@ for ds in datasets
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
 
-
+=#
 
 
 # Non Uniform Sampling
-
+#=
 directed = false
 separator = "\t"
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
@@ -84,9 +84,11 @@ for ds in datasets
 
 end
 
-
+=#
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
-datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+#datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+#=
+datasets = ["08_web_berkstan.txt"]
 
 
 
@@ -110,7 +112,7 @@ for ds in datasets
 
 
 end
-
+=#
 # Uniform
 
 directed = false
@@ -141,7 +143,7 @@ end
 
 
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
-datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
+datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 
 
 
