@@ -523,7 +523,7 @@ end
 
 # Exact algorithm for our definition of percolation centrality
 
-function parallel_percolation_centrality_new_target(g,percolation_states::Array{Float64})::Tuple{Array{Float64},Array{Float64},Float64,Array{Float64},Float64,Float64}
+function parallel_percolation_centrality_new_target(g,percolation_states::Array{Float64},subgraph = nothing)::Tuple{Array{Float64},Array{Float64},Float64,Array{Float64},Float64,Float64}
     @assert nv(g) == lastindex(percolation_states) "Vertex set and percolation array must have the same dimensions"
     dv,_,_,_=compute_d_max(nv(g) ,percolation_states)
     max_d_v::Float64 = maximum(dv)
@@ -540,8 +540,15 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     @info("---------------------------------------------------------------------------------------------------")
     @info("Computing percolation centrality considering source and targets")
     flush(stderr)
+    H = g
+    induced_sg::Bool = false
+    if !isnothing(subgraph)
+        H = induced_subgraph(g,subgraph)
+        induced_sg = true
+    end
     start_time::Float64 = time()
     n::Int64 = nv(g)
+    n_old::Int64 = n
     #percent_status::Array{Tuple{Float64,Int64,String}} = [(0.25,trunc(Int64,n*0.25),"Analyzed 25% of the graph"),(0.50,trunc(Int64,n*0.50),"Analyzed 50% of the graph"),(0.75,trunc(Int64,n*0.75),"Analyzed 75% of the graph"),(0.9,trunc(Int64,n*0.9),"Analyzed 90% of the graph")]
     #percent_index::Int16 = 1
     vs_active = [i for i in 1:n]
@@ -557,6 +564,14 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
     verbose_step::Int64 = trunc(Int64,floor(n*0.25))
     processed_so_far::Int64 = 0
+    if induced_sg
+        g = H[1] 
+        n = nv(g)
+        percolation_states = percolation_states[subgraph]
+        percolation = [zeros(Float64,n) for _ in 1:ntasks]
+        final_percolation = zeros(Float64,n)
+        task_size = cld(n, ntasks)
+    end
     @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
         Threads.@spawn for s in @view(vs_active[task_range])
             if length(outneighbors(g,s)) > 0
@@ -565,7 +580,7 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
             #=
             if (Sys.free_memory() / Sys.total_memory() < 0.1)
                 clean_gc()
-                sleep(0.01)
+                sleep(0.01)DimensionMismatch
             end
             =#
             processed_so_far +=1
@@ -587,6 +602,17 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     finish_time::Float64 = time()-start_time
     @info("Percolation centrality s to z computed in "*string(finish_time))
     flush(stderr)
+    if induced_sg
+        tmp_final_percolation::Array{Float64} = zeros(Float64,n_old)
+        println(H[2])
+        println(final_percolation)
+        println(percolation_states)
+        for i in 1:lastindex(H[2])
+
+            tmp_final_percolation[H[2][i]] = final_percolation[i]
+        end
+        final_percolation = tmp_final_percolation
+    end
     return final_percolation,unnormalized_scores,percolation_data[1],dv,max_d_v,finish_time
 end
 

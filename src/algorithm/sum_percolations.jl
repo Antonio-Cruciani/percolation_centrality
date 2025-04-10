@@ -116,6 +116,55 @@ function attach_gadget(g,k::Int64)
 end
 
 
+function attach_gadget_to_biggest_component(g,k::Int64)
+    n::Int64 = nv(g)
+    x::Array{Float64} = zeros(Float64,n+k)  
+    q = SimpleGraph(1)
+    if is_directed(g)
+        q = SimpleDiGraph(n+k)
+    else
+        q = SimpleGraph(n+k)
+    end
+    for i in n+1:n+k-1
+        add_edge!(q,i,i+1)
+        if is_directed(g)
+            add_edge!(q,i+1,i)
+        end
+    end
+
+    max_conn_comp::Array{Int64} = Array{Int64}([])
+    cc = []
+    if is_directed(q)
+        cc = strongly_connected_components(g)
+    else
+        cc = connected_components(g)
+    end
+    max_size::Int64 = 0
+    for c in cc
+        if lastindex(c) > max_size
+            max_size = lastindex(c)
+            max_conn_comp = c
+        end
+    end
+    u = max_conn_comp[sample(1:lastindex(max_conn_comp))]
+    add_edge!(q,n+1,u)
+    
+    f = union(g,q)
+    for i in 1:n
+        x[i] = 0.0
+    end
+    j::Int64 = 1
+    for i in n+1:n+k
+        if j < k/2
+            x[i] = 0.0
+        else
+            x[i] = 1.0
+        end
+        j += 1
+    end
+    return f,x
+end
+
 function custom_percolation_randomized(n::Int64,rnd_size::Int64,eps_size::Int64,zero_size::Int64,one_size::Int64,epsilon::Float64)::Array{Float64}
     @assert n == rnd_size + eps_size + zero_size + one_size "the sum of the ranges must sum to n"
     percolations::Array{Float64} = zeros(Float64,n)
