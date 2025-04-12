@@ -13,7 +13,7 @@ graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
 component_size = 50
-
+#=
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
 
 
@@ -53,7 +53,7 @@ for ds in datasets
     save_results_new(ds_name,"exact_target",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
-
+=#
 # Non Uniform Sampling
 graphs_path = "components/"
 
