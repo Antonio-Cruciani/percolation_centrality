@@ -62,8 +62,8 @@ graphs_path = "components/"
 directed = false
 separator = "\t"
 #datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
-datasets = ["07_large_twitch_edges.txt"]
-#=
+datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
+
 
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_"*string(component_size)
@@ -81,13 +81,13 @@ for ds in datasets
 
 
 end
-=#
+
 
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
 #datasets = ["12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
 
-datasets = ["08_web_berkstan.txt"]
-#=
+datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
+
 directed = true
 separator = "\t"
 
@@ -107,14 +107,14 @@ for ds in datasets
 
 
 end
-=#  
+ 
 
 # Uniform
 
 directed = false
 separator = "\t"
 #datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
-datasets = ["07_large_twitch_edges.txt"]
+datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
 
 
 for ds in datasets
@@ -137,7 +137,7 @@ end
 
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
 #,"08_web_berkstan.txt"
-datasets = ["12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
+datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 
 
 
