@@ -574,7 +574,7 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     end
     @sync for (t, task_range) in enumerate(Iterators.partition(1:n, task_size))
         Threads.@spawn for s in @view(vs_active[task_range])
-            if length(outneighbors(g,s)) > 0
+            if length(outneighbors(g,s)) > 0 && percolation_states[s] > 0.0
                 _parallel_sz_bfs_exact!(g,s,percolation_states,percolation[t])
             end
             #=

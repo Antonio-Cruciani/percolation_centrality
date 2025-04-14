@@ -58,7 +58,7 @@ end
 =#
 # Non Uniform Sampling
 graphs_path = "components/"
-
+#=
 directed = false
 separator = "\t"
 #datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
@@ -81,13 +81,13 @@ for ds in datasets
 
 
 end
-
+=#
 
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
 #datasets = ["12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt","08_web_berkstan.txt"]
 
-datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
-
+#datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
+datasets = ["08_web_berkstan.txt"]
 directed = true
 separator = "\t"
 
@@ -110,7 +110,7 @@ end
  
 
 # Uniform
-
+#=
 directed = false
 separator = "\t"
 #datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
@@ -134,12 +134,12 @@ for ds in datasets
 
 end
 
-
+=#
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt"]
 #,"08_web_berkstan.txt"
-datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
+#datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 
-
+datasets = ["08_web_berkstan.txt"]
 
 directed = true
 separator = "\t"
