@@ -38,7 +38,7 @@ end
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 datasets = ["08_web_berkstan.txt"]
 separator = "\t"
-
+#=
 directed = true
 
 for ds in datasets
@@ -54,6 +54,7 @@ for ds in datasets
     save_results_new(ds_name,"exact_target",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
+=#
 #=
 # Non Uniform Sampling
 graphs_path = "components/"
@@ -88,6 +89,7 @@ end
 
 #datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
 datasets = ["08_web_berkstan.txt"]
+graphs_path = "components/"
 
 directed = true
 separator = "\t"
