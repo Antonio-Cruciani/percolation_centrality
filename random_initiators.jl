@@ -61,7 +61,7 @@ end
 
 # Uniform
 for ds in datasets
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds_name*".txt")
