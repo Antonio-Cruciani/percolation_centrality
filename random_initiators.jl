@@ -20,14 +20,14 @@ datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.t
 
 directed = false
 separator = "\t"
-#=
+
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
-    h,x = attach_gadget_to_biggest_component(g,component_size)
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
+    h,x = plant_random_initiators(g,component_size)
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
     save_percolation_array(ds_name,x)
-    save_graph(h,ds_name,separator)
+    #save_graph(h,ds_name,separator)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     flush(stderr)
     y = parallel_percolation_centrality_new_target(h,x)
@@ -35,16 +35,16 @@ for ds in datasets
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
 
-=#
 
 
-graphs_path = "components/"
+
+#graphs_path = "components/"
 
 # Non uniform
 
 for ds in datasets
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
-    gf = graphs_path*ds_name*".txt"
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds_name*".txt")
     i =1
@@ -62,7 +62,7 @@ end
 # Uniform
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
-    gf = graphs_path*ds_name*".txt"
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds_name*".txt")
     i =1
@@ -88,26 +88,26 @@ datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","1
 separator = "\t"
 
 directed = true
-#=
+
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
-    h,x = attach_gadget_to_biggest_component(g,component_size)
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
+    h,x = plant_random_initiators(g,component_size)
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
     save_percolation_array(ds_name,x)
-    save_graph(h,ds_name,separator)
+    #save_graph(h,ds_name,separator)
     #nods = [nv(g)+i for i in 1:nv(h)-nv(g)]
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     y = parallel_percolation_centrality_new_target(h,x)
     save_results_new(ds_name,"exact_target",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
-=#
-graphs_path = "components/"
+
+#graphs_path = "components/"
 # Non uniform
 for ds in datasets
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
-    gf = graphs_path*ds_name*".txt"
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds_name*".txt")
     i =1
@@ -123,8 +123,8 @@ for ds in datasets
 end
 # Uniform
 for ds in datasets
-    ds_name = string(split(ds,".txt")[1])*"_lcc_"*string(component_size)
-    gf = graphs_path*ds_name*".txt"
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
+    gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
     perc = read_percolation(percolation_path*ds_name*".txt")
     i =1

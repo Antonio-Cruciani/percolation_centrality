@@ -214,6 +214,13 @@ function attach_gadget_to_biggest_component_in(g,k::Int64)
     return g,x
 end
 
+function plant_random_initiators(g,k::Int64)
+    n::Int64 = nv(g)
+    x::Array{Float64} = zeros(Float64,n)
+    x[sample(1:n,k,replace=false)] .= 1.0
+    return g,x
+end
+
 function custom_percolation_randomized(n::Int64,rnd_size::Int64,eps_size::Int64,zero_size::Int64,one_size::Int64,epsilon::Float64)::Array{Float64}
     @assert n == rnd_size + eps_size + zero_size + one_size "the sum of the ranges must sum to n"
     percolations::Array{Float64} = zeros(Float64,n)
