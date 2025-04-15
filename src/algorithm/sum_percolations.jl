@@ -79,32 +79,31 @@ end
 function attach_gadget(g,k::Int64)
     n::Int64 = nv(g)
     x::Array{Float64} = zeros(Float64,n+k)  
-    q = SimpleGraph(1)
-    if is_directed(g)
-        q = SimpleDiGraph(n+k)
-    else
-        q = SimpleGraph(n+k)
+
+    for _ in 1:k
+        add_vertices!(g, 1)
     end
-    for i in n+1:n+k-1
-        add_edge!(q,i,i+1)
-        if is_directed(g)
-            add_edge!(q,i+1,i)
-        end
+    #add_edge!(g,u,n+1)
+
+    for i in n+2:n+k
+        add_edge!(g,i,i-1)
+        add_edge!(g,i-1,i)
     end
+
     for _ in 1:log(n)
         u = sample(1:n)
-        add_edge!(q,u,n+1)
-        if is_directed(g)
-            add_edge!(q,n+1,u)
-        end
+        add_edge!(g,u,n+1)
+        
+        add_edge!(g,n+1,u)
+        
     end
-    
-    f = union(g,q)
+
+   
     for i in 1:n
         x[i] = 0.0
     end
-    j::Int64 = 1
-    for i in n+1:n+k
+    j::Int64 = 0
+    for i in n+1:nv(g)
         if j < k/2
             x[i] = 0.0
         else
@@ -112,29 +111,20 @@ function attach_gadget(g,k::Int64)
         end
         j += 1
     end
-    return f,x
+
+
+    return g,x
 end
+
 
 
 function attach_gadget_to_biggest_component(g,k::Int64)
     n::Int64 = nv(g)
-    x::Array{Float64} = zeros(Float64,n+k)  
-    q = SimpleGraph(1)
-    if is_directed(g)
-        q = SimpleDiGraph(n+k)
-    else
-        q = SimpleGraph(n+k)
-    end
-    for i in n+1:n+k-1
-        add_edge!(q,i,i+1)
-        if is_directed(g)
-            add_edge!(q,i+1,i)
-        end
-    end
+    x::Array{Float64} = zeros(Float64,n+k)
 
     max_conn_comp::Array{Int64} = Array{Int64}([])
     cc = []
-    if is_directed(q)
+    if is_directed(g)
         cc = strongly_connected_components(g)
     else
         cc = connected_components(g)
@@ -147,14 +137,25 @@ function attach_gadget_to_biggest_component(g,k::Int64)
         end
     end
     u = max_conn_comp[sample(1:lastindex(max_conn_comp))]
-    add_edge!(q,n+1,u)
-    
-    f = union(g,q)
+
+    for _ in 1:k
+        add_vertices!(g, 1)
+    end
+    #add_edge!(g,u,n+1)
+    add_edge!(g,n+1,u)
+
+    for i in n+2:n+k
+        add_edge!(g,i,i-1)
+        add_edge!(g,i-1,i)
+    end
+
+    add_edge!(g,u,n+1)
+
     for i in 1:n
         x[i] = 0.0
     end
-    j::Int64 = 1
-    for i in n+1:n+k
+    j::Int64 = 0
+    for i in n+1:nv(g)
         if j < k/2
             x[i] = 0.0
         else
@@ -162,7 +163,7 @@ function attach_gadget_to_biggest_component(g,k::Int64)
         end
         j += 1
     end
-    return f,x
+    return g,x
 end
 
 function custom_percolation_randomized(n::Int64,rnd_size::Int64,eps_size::Int64,zero_size::Int64,one_size::Int64,epsilon::Float64)::Array{Float64}

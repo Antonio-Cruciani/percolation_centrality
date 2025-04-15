@@ -1025,7 +1025,7 @@ function parallel_estimate_percolation_centrality_non_uniform(g,percolation_stat
     vs_active = [i for i in 1:sample_size]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
-            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,true)
+            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,false)
         end
     end
     finish_time::Float64 = time()-start_time
