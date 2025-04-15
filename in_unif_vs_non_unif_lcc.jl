@@ -20,7 +20,7 @@ datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.t
 
 directed = false
 separator = "\t"
-
+#=
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
@@ -36,7 +36,7 @@ for ds in datasets
 end
 
 
-
+=#
 
 graphs_path = "components/"
 
@@ -88,7 +88,7 @@ datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","1
 separator = "\t"
 
 directed = true
-
+#=
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
@@ -102,6 +102,7 @@ for ds in datasets
     save_results_new(ds_name,"exact_target",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
+=#
 graphs_path = "components/"
 # Non uniform
 for ds in datasets
