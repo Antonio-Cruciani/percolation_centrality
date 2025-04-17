@@ -247,6 +247,332 @@ function parallel_estimate_percolation_centrality_new_lock(g,percolation_states:
 end
 
 
+function _random_path_non_unif_silv!(sg::static_graph,n, percolation_centrality::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},alpha_sampling::Float64,lk::ReentrantLock,uniform_sampling::Bool)
+    ball_indicator::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    q::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+    u::Int64 = sample(1:n)
+    v::Int64 = u
+    if !uniform_sampling
+        u,v = weighted_sample_kappa(percolation_states)
+    else
+        while (u == v)
+            v = sample(1:n)
+        end
+    end
+    if percolation_states[u] > percolation_states[v] 
+        end_q = 2
+        #q[1] = u
+        #q[2] = v
+        path_map::Dict{Int64,UInt128} = Dict{Int64,UInt128}()
+        num_path_to_sample::UInt128 = 0
+        ball_indicator[u] = @visited_s
+        ball_indicator[v] = @visited_z
+        n_paths[u] = 1
+        n_paths[v] = 1
+        dist[u] = 0
+        dist[v] = 0
+
+        sp_edges = Vector{Tuple{Int64, Int64}}()
+        have_to_stop = false
+        start_u, end_u = 1, 2
+        start_v, end_v = 2, 3
+        vis_edges = 0
+
+        sum_degs_u = 0
+        sum_degs_v = 0
+        degrees = sg.degrees_adj
+        q_s::Queue{Int64} = Queue{Int64}()
+        q_z::Queue{Int64} = Queue{Int64}()
+        enqueue!(q_s,u)
+        enqueue!(q_z,v)
+        to_expand = @adjacency
+
+        while !have_to_stop
+            if sum_degs_u <= sum_degs_v
+                start_cur, end_cur = start_u, end_u
+                start_cur = 0
+                end_cur = length(q_s)
+                start_u = end_q
+                new_end_cur = Ref(end_u)
+                end_u = end_q
+                sum_degs_u = 0
+                sum_degs_cur = Ref(sum_degs_u)
+                degrees = sg.degrees_adj
+                adj = sg.adjacency
+                to_expand = @adjacency
+
+            else
+                start_cur, end_cur = start_v, end_v
+                start_cur = 0
+                end_cur = length(q_z)
+                start_v = end_q
+                new_end_cur = Ref(end_v)
+                end_v = end_q
+                sum_degs_v = 0
+                sum_degs_cur = Ref(sum_degs_v)
+                degrees = sg.degrees_idj
+                adj = sg.incidency
+                to_expand = @incidency
+
+            end
+
+            while start_cur < end_cur
+                #x = q[start_cur]
+                if to_expand == @adjacency
+                    x = dequeue!(q_s)
+                else
+                    x = dequeue!(q_z)
+                end
+                start_cur += 1
+                neigh_num = degrees[x]
+
+                for j in 1:neigh_num
+                    vis_edges += 1
+                    y = adj[x][j]
+                    if ball_indicator[y] == 0
+                        sum_degs_cur[] += degrees[y]
+                        n_paths[y] = n_paths[x]
+                        ball_indicator[y] = ball_indicator[x]
+                        if (to_expand == @adjacency)
+                            enqueue!(q_s,y)
+                        else
+                            enqueue!(q_z,y)
+                        end
+                        #q[end_q] = y
+                        end_q += 1
+                        new_end_cur[] += 1
+                        push!(pred[y],x)
+                        dist[y] = dist[x] + 1
+                    elseif ball_indicator[y] != ball_indicator[x]
+                        have_to_stop = true
+                        push!(sp_edges, (x, y))
+                    elseif dist[y] == dist[x] + 1
+                        n_paths[y] += n_paths[x]
+                        push!(pred[y],x)
+                    end
+                end
+            end
+
+            if sum_degs_cur[] == 0
+                have_to_stop = true
+            end
+        end
+
+        if length(sp_edges) != 0
+            #println("IT IS NOT 0")
+            tot_weight = sum(n_paths[x] * n_paths[y] for (x, y) in sp_edges)
+            num_path_to_sample = 1
+            if (alpha_sampling > 0 && tot_weight > 1)
+                num_path_to_sample = trunc(Int64,floor(alpha_sampling * tot_weight))
+            end
+            for j in 1:num_path_to_sample
+                random_edge = rand(0:tot_weight-1)
+                cur_edge = 0
+                path::Array{Int64} =Array{Int64}([])
+
+                for (x, y) in sp_edges
+                    cur_edge += n_paths[x] * n_paths[y]
+                    if cur_edge > random_edge
+                        ##println("CUR EDG ",cur_edge, " rnd edg ",random_edge, " x ",x," y ",y)
+                        #println("S ",u, " Z ",v)
+                        _backtrack_path!(u, v, x, path, n_paths, pred)
+                        _backtrack_path!(u, v, y, path, n_paths, pred)
+                        break
+                    end
+                end
+                for w in path
+                    if haskey(path_map,w)
+                        path_map[w] +=1
+                    else
+                        path_map[w] = 1
+                    end
+                end
+                #for i in 1:end_q
+                #    ball_indicator[q[i]] = @unvisited
+                #end
+                #println(path)
+                
+            end
+            begin
+                lock(lk)
+                try
+                    for w in keys(path_map)
+                        percolation_value = path_map[w]/num_path_to_sample
+                        
+                        if uniform_sampling
+                            percolation_value =  (ramp(percolation_states[u],percolation_states[v])/percolation_data[1])  *  path_map[w]/num_path_to_sample
+                        end
+                        percolation_centrality[w] += percolation_value
+                    end
+                finally
+                    unlock(lk)
+                end
+            end
+        end
+    end
+    return nothing
+end
+
+
+function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},alpha_sampling::Float64,lk::ReentrantLock,uniform_sampling::Bool)
+    ball_indicator::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    q::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+    u::Int64 = sample(1:n)
+    v::Int64 = u
+    if !uniform_sampling
+        u,v = weighted_sample_kappa(percolation_states)
+    else
+        while (u == v)
+            v = sample(1:n)
+        end
+    end
+    if percolation_states[u] > percolation_states[v] 
+        end_q = 2
+        #q[1] = u
+        #q[2] = v
+
+        ball_indicator[u] = @visited_s
+        ball_indicator[v] = @visited_z
+        n_paths[u] = 1
+        n_paths[v] = 1
+        dist[u] = 0
+        dist[v] = 0
+
+        sp_edges = Vector{Tuple{Int64, Int64}}()
+        have_to_stop = false
+        start_u, end_u = 1, 2
+        start_v, end_v = 2, 3
+        vis_edges = 0
+
+        sum_degs_u = 0
+        sum_degs_v = 0
+        degrees = sg.degrees_adj
+        q_s::Queue{Int64} = Queue{Int64}()
+        q_z::Queue{Int64} = Queue{Int64}()
+        enqueue!(q_s,u)
+        enqueue!(q_z,v)
+        to_expand = @adjacency
+
+        while !have_to_stop
+            if sum_degs_u <= sum_degs_v
+                start_cur, end_cur = start_u, end_u
+                start_cur = 0
+                end_cur = length(q_s)
+                start_u = end_q
+                new_end_cur = Ref(end_u)
+                end_u = end_q
+                sum_degs_u = 0
+                sum_degs_cur = Ref(sum_degs_u)
+                degrees = sg.degrees_adj
+                adj = sg.adjacency
+                to_expand = @adjacency
+
+            else
+                start_cur, end_cur = start_v, end_v
+                start_cur = 0
+                end_cur = length(q_z)
+                start_v = end_q
+                new_end_cur = Ref(end_v)
+                end_v = end_q
+                sum_degs_v = 0
+                sum_degs_cur = Ref(sum_degs_v)
+                degrees = sg.degrees_idj
+                adj = sg.incidency
+                to_expand = @incidency
+
+            end
+
+            while start_cur < end_cur
+                #x = q[start_cur]
+                if to_expand == @adjacency
+                    x = dequeue!(q_s)
+                else
+                    x = dequeue!(q_z)
+                end
+                start_cur += 1
+                neigh_num = degrees[x]
+
+                for j in 1:neigh_num
+                    vis_edges += 1
+                    y = adj[x][j]
+                    if ball_indicator[y] == 0
+                        sum_degs_cur[] += degrees[y]
+                        n_paths[y] = n_paths[x]
+                        ball_indicator[y] = ball_indicator[x]
+                        if (to_expand == @adjacency)
+                            enqueue!(q_s,y)
+                        else
+                            enqueue!(q_z,y)
+                        end
+                        #q[end_q] = y
+                        end_q += 1
+                        new_end_cur[] += 1
+                        push!(pred[y],x)
+                        dist[y] = dist[x] + 1
+                    elseif ball_indicator[y] != ball_indicator[x]
+                        have_to_stop = true
+                        push!(sp_edges, (x, y))
+                    elseif dist[y] == dist[x] + 1
+                        n_paths[y] += n_paths[x]
+                        push!(pred[y],x)
+                    end
+                end
+            end
+
+            if sum_degs_cur[] == 0
+                have_to_stop = true
+            end
+        end
+
+        if length(sp_edges) != 0
+            #println("IT IS NOT 0")
+            tot_weight = sum(n_paths[x] * n_paths[y] for (x, y) in sp_edges)
+            random_edge = rand(0:tot_weight-1)
+            cur_edge = 0
+            path::Array{Int64} =Array{Int64}([])
+
+            for (x, y) in sp_edges
+                cur_edge += n_paths[x] * n_paths[y]
+                if cur_edge > random_edge
+                    ##println("CUR EDG ",cur_edge, " rnd edg ",random_edge, " x ",x," y ",y)
+                    #println("S ",u, " Z ",v)
+                    _backtrack_path!(u, v, x, path, n_paths, pred)
+                    _backtrack_path!(u, v, y, path, n_paths, pred)
+                    break
+                end
+            end
+
+            #for i in 1:end_q
+            #    ball_indicator[q[i]] = @unvisited
+            #end
+            #println(path)
+            begin
+                lock(lk)
+                try
+                    for w in path
+                        percolation_value = 1
+                        
+                        if uniform_sampling
+                            percolation_value =  (ramp(percolation_states[u],percolation_states[v])/percolation_data[1])  
+                        end
+                        percolation_centrality[w] += percolation_value
+                    end
+                finally
+                    unlock(lk)
+                end
+            end
+        end
+    end
+    return nothing
+end
+
+
 
 function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}} ,shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false,uniform_sampling::Bool = false)
 
@@ -323,8 +649,10 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
             
             # decide what ball we have to expand
             if (sum_degs_s <= sum_degs_z)
-                start_cur = start_s
-                end_cur = end_s
+                #start_cur = start_s
+                start_cur = 0
+                end_cur = length(q_s)
+                #end_cur = end_s
                 start_s = end_q
                 new_end_cur = end_s
                 end_s = end_q
@@ -333,8 +661,10 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 to_expand = @adjacency
                 #println("SUM DEG S ",sum_degs_s)
             else
-                start_cur = start_z
-                end_cur = end_z
+                #start_cur = start_z
+                start_cur = 0
+                end_cur = length(q_z)
+                #end_cur = end_z
                 start_z = end_q
                 new_end_cur = end_z
                 end_z = end_q
@@ -343,6 +673,7 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 to_expand = @incidency
                 #println("SUM DEG Z ",sum_degs_z)
             end
+            
             while (start_cur < end_cur)
             # println("START CUR ",start_cur," END CUR ",end_cur)
                 # to test
@@ -409,7 +740,7 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 start_z = start_cur
                 end_z = new_end_cur
             end
-            end_cur = new_end_cur
+            #end_cur = new_end_cur
         end
         if (length(sp_edges) != 0)
             for p in sp_edges
@@ -430,6 +761,7 @@ function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolatio
                 for p in sp_edges
                     cur_edge += n_paths[p[1]] * n_paths[p[2]]
                     if (cur_edge > random_edge)
+                        println("TOT WEIGHT ",tot_weight," cur edge ",cur_edge," random edge ",random_edge)
                         #println("randm edge ",p)
                         #println("s ",s," z ",z," p ",p)
                         _backtrack_path!(s,z,p[1],path,n_paths,pred)
@@ -901,7 +1233,7 @@ function parallel_estimate_percolation_centrality_fixed_sample_size_new(g,percol
 end
 
 
-function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},percolation_centrality::Array{Float64})
+function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},percolation_centrality::Array{Float64},lk::ReentrantLock,uniform_sampling::Bool)
     n::Int64 = nv(g)
     s::Int64 = sample(1:n)
     z::Int64 = sample(1:n)
@@ -917,8 +1249,12 @@ function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolat
     cur_edge::Int64 = 0
     path::Array{Int64} = Array{Int64}([])
     q_backtrack::Queue{Int64} = Queue{Int64}()
-    while (s == z)
-        z = sample(1:nv(g))
+    if !uniform_sampling
+        s,z = weighted_sample_kappa(percolation_states)
+    else
+        while (s == z)
+            z = sample(1:n)
+        end
     end
     if percolation_states[s] > percolation_states[z]
         enqueue!(q,s)
@@ -955,18 +1291,33 @@ function _parallel_sz_bfs_fss_new!(g,percolation_states::Array{Float64},percolat
         if length(q_backtrack) != 0
             w = dequeue!(q_backtrack)
             tot_weight = n_paths[z]
+
             random_edge = rand(0:tot_weight-1)
             cur_edge = 0
             for p in pred[z]
                 cur_edge += n_paths[p]
                 if cur_edge > random_edge
+                    #println("TOT WEIGHT ",tot_weight," cur edge ",cur_edge," random edge ",random_edge)
+
                     _backtrack_path!(s,z,p,path,n_paths,pred)
-                    break;
+                    break
                 end
             end
-            for w in path
-                percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[1])  
-            end
+            begin
+                lock(lk)
+                try
+                    for w in path
+                        if !uniform_sampling
+                            percolation_centrality[w] += 1
+                        else
+                            percolation_centrality[w] += (ramp(percolation_states[s],percolation_states[z])/percolation_data[1])  
+                        end
+                    end
+                finally 
+                    unlock(lk)
+                end
+            end    
+            
         end  
     end
 
@@ -1019,13 +1370,15 @@ function parallel_estimate_percolation_centrality_non_uniform(g,percolation_stat
     #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     #betweenness::Array{Float64} = zeros(Float64,n)
     start_time::Float64 = time()
-    final_new_diam_estimate::Array{Int64} = [100]
     lk::ReentrantLock = ReentrantLock()
     task_size = cld(sample_size, ntasks)
     vs_active = [i for i in 1:sample_size]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
-            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,false)
+            #_parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,false)
+            #_parallel_sz_bfs_replace!(g,percolation_states,percolation_data,final_percolation_centrality,lk,false)
+            #_parallel_sz_bfs_fss_new!(g,percolation_states,percolation_data,final_percolation_centrality,lk,false)
+            _random_path_non_unif!(sg,n, final_percolation_centrality,percolation_states,percolation_data,alpha_sampling,lk,false)
         end
     end
     finish_time::Float64 = time()-start_time
@@ -1076,13 +1429,16 @@ function parallel_estimate_percolation_centrality_uniform(g,percolation_states::
     #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
     #betweenness::Array{Float64} = zeros(Float64,n)
     start_time::Float64 = time()
-    final_new_diam_estimate::Array{Int64} = [100]
     lk::ReentrantLock = ReentrantLock()
     task_size = cld(sample_size, ntasks)
     vs_active = [i for i in 1:sample_size]
     @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
         Threads.@spawn for _ in @view(vs_active[task_range])
-            _parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,true,true)
+            #_parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,true,true)
+            #_parallel_sz_bfs_replace!(g,percolation_states,percolation_data,final_percolation_centrality,lk,true)
+            #_parallel_sz_bfs_fss_new!(g,percolation_states,percolation_data,final_percolation_centrality,lk,true)
+            _random_path_non_unif!(sg,n, final_percolation_centrality,percolation_states,percolation_data,alpha_sampling,lk,true)
+
         end
     end
     finish_time::Float64 = time()-start_time
@@ -1091,3 +1447,102 @@ function parallel_estimate_percolation_centrality_uniform(g,percolation_states::
     return final_percolation_centrality .*[(n*(n-1))/sample_size],sample_size,sample_size,finish_time,finish_time
 
 end
+
+
+
+function _parallel_sz_bfs_replace!(g,percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},percolation_centrality::Array{Float64},lk::ReentrantLock,uniform_sampling::Bool)
+    n::Int64 = nv(g)
+    q::Queue{Int64} = Queue{Int64}()
+    ball::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+
+    s::Int64 = sample(1:n)
+    z::Int64 = sample(1:n)
+    w::Int64 = 0
+    d_z_min::Float64 = Inf
+    #q_backtrack::Stack{Int64} = Stack{Int64}()
+    if !uniform_sampling
+        s,z = weighted_sample_kappa(percolation_states)
+    else
+        while (s == z)
+            z = sample(1:n)
+        end
+    end
+    if percolation_states[s] > percolation_states[z]
+        enqueue!(q,s)
+        dist[s] = 0
+        n_paths[s] = 1
+        ball[s] = 1
+        while length(q) != 0
+            w = dequeue!(q)
+            if dist[w] < d_z_min
+                for v in outneighbors(g,w)
+                    if (ball[v] == 0)
+                        dist[v] = dist[w] +1
+                        ball[v] = 1
+                        n_paths[v] = n_paths[w]
+                        if (v == z)
+                            if dist[v] < d_z_min
+                                d_z_min = dist[v]
+                            end
+                        
+                        end
+                        push!(pred[v],w)
+                        enqueue!(q,v)
+                        #push!(q_backtrack,v)
+                    elseif (dist[v] == dist[w] + 1)
+                        n_paths[v] += n_paths[w]
+                        push!(pred[v],w)
+                    end
+
+                end
+            end
+        end
+        #backtrack
+
+    if ball[z] == 1
+            q_backtrack::Queue{Int64} = Queue{Int64}()
+            queued::Array{Int16} = zeros(Int16,n)
+            #number_of_sps_to_target::Dict{Int64,Int128} = Dict{Int64,Int128}()
+            number_of_sps_to_target::Array{UInt128} = zeros(UInt128,n)
+            number_of_paths_through_curr::UInt128 = 0
+            for p in pred[z]
+                enqueue!(q_backtrack,p)
+                number_of_sps_to_target[p] = 1
+                queued[p] = 1
+            end
+            w = dequeue!(q_backtrack)
+            while w != s
+                number_of_paths_through_curr = n_paths[w] * number_of_sps_to_target[w]
+                begin
+                    lock(lk)
+                    try
+                        if !uniform_sampling
+                            percolation_centrality[w] += (number_of_paths_through_curr/n_paths[z])
+                        else
+                            percolation_centrality[w] += (number_of_paths_through_curr/n_paths[z]) *  ramp(percolation_states[s],percolation_states[z])/percolation_data[1]
+                        end
+                    finally 
+                        unlock(lk)
+                    end
+                end    
+                for p in pred[w]
+                    if queued[p] == 0
+                        enqueue!(q_backtrack,p)
+                        queued[p] = 1
+                    end
+                    number_of_sps_to_target[p] += number_of_sps_to_target[w]
+                end
+                w  = dequeue!(q_backtrack)
+            end
+        end
+    end
+
+
+   return nothing
+end
+
+
+

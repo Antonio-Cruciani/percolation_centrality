@@ -785,11 +785,21 @@ function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths:
     if (w == s || w == z)
         return nothing
     end
+    #=
+    tot_weight_test::UInt128 = 0
+    for p in pred[w]
+        tot_weight_test += n_paths[p]
+    end
+    if tot_weight_test != tot_weight
+        println("IL TEST NON PASSA!!!!")
+        exit(1)
+    end
+    =#
     push!(path,w)
     random_pred = rand(0:tot_weight-1)
     for p in pred[w]
         v = p
-        cur_pred += n_paths[z]
+        cur_pred += n_paths[v]
         if (cur_pred > random_pred)
             break
         end
@@ -798,3 +808,5 @@ function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths:
         _backtrack_path!(s,z,v,path,n_paths,pred)
     end
 end
+
+

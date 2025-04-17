@@ -2,8 +2,10 @@
 struct static_graph
     adjacency::Array{Array{Int64}}
     incidency::Array{Array{Int64}}
+    degrees_adj::Array{Int64}
+    degrees_idj::Array{Int64}
     function static_graph(adj::Array{Array{Int64}},idj::Array{Array{Int64}})
-        return new(adj,idj)
+        return new(adj,idj,[lastindex(adj[u]) for u in 1:lastindex(adj)],[lastindex(idj[u]) for u in 1:lastindex(idj)])
     end
 end
 

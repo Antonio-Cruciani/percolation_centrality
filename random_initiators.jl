@@ -4,11 +4,12 @@ include("src/PERC.jl")
 
 
 #epsilon_list = [0.1,0.07,0.05,0.01,0.005,0.001,0.0005]
+#500000,1000000
 sample_size_list = [1000,5000,10000,50000,100000]
 ss_save = [1,2,3,4,5,6,7]
 delta = 0.05
 
-run = 5
+run = 10
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
@@ -16,7 +17,7 @@ component_size = 50
 
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]
 
-
+#datasets = ["00_hiv.txt"]
 
 directed = false
 separator = "\t"
@@ -138,6 +139,7 @@ for ds in datasets
 
 
 end
+
 #=
 # Non Uniform Sampling
 graphs_path = "components/"
