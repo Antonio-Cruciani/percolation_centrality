@@ -180,8 +180,7 @@ function parallel_percolation_centrality_target(g,percolation_states::Array{Floa
     flush(stderr)
     return final_percolation,unnormalized_scores,finish_time
 end
-
-
+=#
 function _parallel_sz_bfs_exact!(g,u::Int64,percolation_states::Array{Float64},percolation::Array{Float64})
     n::Int64 = nv(g)
     w::Int64 = -1
@@ -224,7 +223,7 @@ function _parallel_sz_bfs_exact!(g,u::Int64,percolation_states::Array{Float64},p
 
    return nothing
 end
-=#
+
 
 
 
