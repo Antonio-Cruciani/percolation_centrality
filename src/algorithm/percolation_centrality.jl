@@ -74,3 +74,6 @@ function percolation_centrality(g,percolation_states::Array{Float64},normalized:
     flush(stderr)
     return percolation,finish_time
 end
+
+
+

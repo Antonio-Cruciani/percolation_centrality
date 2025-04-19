@@ -309,7 +309,7 @@ function weighted_sample_kappa_slow(X::Vector{Float64})::Tuple{Int64, Int64}
     return valid_pairs[idx]
 end
 
-
+# Compute for each s, w[s] = sum_{z:x_s>x_z}(x_s-x_z)
 function build_outgoing_weights(X::Vector{Float64})
     n = length(X)
     sorted_indices = sortperm(X)

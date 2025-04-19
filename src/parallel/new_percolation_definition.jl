@@ -416,13 +416,10 @@ function _random_path_non_unif_silv!(sg::static_graph,n, percolation_centrality:
     return nothing
 end
 
+#=
 
 function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},alpha_sampling::Float64,lk::ReentrantLock,uniform_sampling::Bool)
-    ball_indicator::Array{Int16} = zeros(Int16,n)
-    n_paths::Array{UInt128} = zeros(UInt128,n)
-    dist::Array{Int64} = zeros(Int64,n)
-    q::Array{Int64} = zeros(Int64,n)
-    pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+    
     u::Int64 = sample(1:n)
     v::Int64 = u
     if !uniform_sampling
@@ -433,10 +430,17 @@ function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Arra
         end
     end
     if percolation_states[u] > percolation_states[v] 
+        # Variables for the visit
+        ball_indicator::Array{Int16} = zeros(Int16,n)
+        n_paths::Array{UInt128} = zeros(UInt128,n)
+        dist::Array{Int64} = zeros(Int64,n)
+        pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
         end_q = 2
         #q[1] = u
         #q[2] = v
-
+        tot_weight::UInt128 = 0
+        random_edge::UInt128 = 0
+        cur_edge::UInt128 = 0
         ball_indicator[u] = @visited_s
         ball_indicator[v] = @visited_z
         n_paths[u] = 1
@@ -444,20 +448,20 @@ function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Arra
         dist[u] = 0
         dist[v] = 0
 
-        sp_edges = Vector{Tuple{Int64, Int64}}()
-        have_to_stop = false
+        sp_edges::Vector{Tuple{Int64, Int64}} = Vector{Tuple{Int64, Int64}}()
+        have_to_stop::Bool = false
         start_u, end_u = 1, 2
         start_v, end_v = 2, 3
-        vis_edges = 0
+        vis_edges::Int64 = 0
 
-        sum_degs_u = 0
-        sum_degs_v = 0
+        sum_degs_u::Int64 = 0
+        sum_degs_v::Int64 = 0
         degrees = sg.degrees_adj
         q_s::Queue{Int64} = Queue{Int64}()
         q_z::Queue{Int64} = Queue{Int64}()
         enqueue!(q_s,u)
         enqueue!(q_z,v)
-        to_expand = @adjacency
+        to_expand::Int32 = @adjacency
 
         while !have_to_stop
             if sum_degs_u <= sum_degs_v
@@ -552,6 +556,7 @@ function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Arra
             #    ball_indicator[q[i]] = @unvisited
             #end
             #println(path)
+            #println("Number of path to backtrack is ",trunc(UInt128,floor(alpha_sampling * tot_weight)), " for thread ",(threadid()))
             begin
                 lock(lk)
                 try
@@ -572,7 +577,7 @@ function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Arra
     return nothing
 end
 
-
+=#
 
 function _parallel_random_path_weighted_lk!(sg::static_graph,n::Int64,percolation_centrality::Array{Float64},wimpy_variance::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}} ,shortest_path_length::Array{Int64},mcrade::Array{Float64},mc_trials::Int64,alpha_sampling::Float64,new_diam_estimate::Array{Int64},lk::ReentrantLock,run_perc::Bool = true,boostrap_phase::Bool = false,uniform_sampling::Bool = false)
 
@@ -851,7 +856,7 @@ end
 
 
 
-
+#=
 
 # Exact algorithm for our definition of percolation centrality
 
@@ -948,7 +953,7 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     return final_percolation,unnormalized_scores,percolation_data[1],dv,max_d_v,finish_time
 end
 
-
+=#
 
 
 # ERA Approximation algorithm
