@@ -29,9 +29,9 @@ for ds in datasets
     h,x = plant_random_initiators(g,component_size)
     ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
     println(percolation_path*ds_name*".txt")
-    x = read_percolation(percolation_path*ds_name*".txt")
+    #x = read_percolation(percolation_path*ds_name*".txt")
 
-    #save_percolation_array(ds_name,x)
+    save_percolation_array(ds_name,x)
     #save_graph(h,ds_name,separator)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     flush(stderr)
