@@ -1395,6 +1395,64 @@ end
 
 
 
+function parallel_estimate_percolation_centrality_non_uniform_reduce(g,percolation_states::Array{Float64},sample_size::Int64,alpha_sampling::Float64 = 0.1)
+    @assert nv(g) == lastindex(percolation_states) "Length of the percolation state array must be the same as the number of nodes"
+    n::Int64 = nv(g)
+    m::Int64 = ne(g)
+    directed::Bool = is_directed(g)
+    dv,_,_,_= compute_d_max(nv(g) ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
+    @info("----------------------------------------| Stats |--------------------------------------------------")
+    @info("Analyzing graph")
+    @info("Number of nodes "*string(n))
+    @info("Number of edges "*string(m))
+    @info("Directed ? "*string(directed))
+    @info("Maximum Percolated state "*string(maximum(percolation_states)))
+    @info("Minimum Percolated state "*string(minimum(percolation_states)))
+    @info("Average Percolated state "*string(mean(percolation_states))*" std "*string(std(percolation_states)))
+    @info("Sample Size "*string(sample_size))
+    @info("Sampler : Non Uniform")
+    @info("Maximum d_v "*string(max_d_v))
+    @info("Using "*string(nthreads())* " Threads")
+    @info("---------------------------------------------------------------------------------------------------")
+    flush(stderr)
+    ntasks = nthreads()
+    sg::static_graph = static_graph(adjacency_list(g),incidency_list(g))
+    run_perc::Bool = true
+    mc_trials = 1
+    final_percolation_centrality::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
+    #wimpy_variance::Array{Array{Float64}} = [zeros(Float64,n) for _ in 1:ntasks]
+    final_wimpy_variance::Array{Float64} = zeros(Float64,n)
+    #shortest_path_length::Array{Array{Int64}} = [zeros(Int64,n+1) for _ in 1:ntasks]
+    final_shortest_path_length::Array{Int64} = zeros(Int64,n+1)
+    #mcrade::Array{Array{Float64}} = [zeros(Float64,(n+1)*mc_trials) for _ in 1:ntasks]
+    final_mcrade::Array{Float64} = zeros(Float64,(n+1)*mc_trials)
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    #tmp_perc_states::Array{Float64} = copy(percolation_states)
+    #percolation_data::Tuple{Float64,Array{Float64}} = percolation_differences(sort(tmp_perc_states),n)
+    #betweenness::Array{Float64} = zeros(Float64,n)
+    start_time::Float64 = time()
+    lk::ReentrantLock = ReentrantLock()
+    task_size = cld(sample_size, ntasks)
+    vs_active = [i for i in 1:sample_size]
+    @sync for (t, task_range) in enumerate(Iterators.partition(1:sample_size, task_size))
+        Threads.@spawn for _ in @view(vs_active[task_range])
+            #_parallel_random_path_weighted_lk!(sg,n,final_percolation_centrality,final_wimpy_variance,percolation_states,percolation_data,final_shortest_path_length,final_mcrade,1,alpha_sampling,final_new_diam_estimate,lk,run_perc,false)
+            #_parallel_sz_bfs_replace!(g,percolation_states,percolation_data,final_percolation_centrality,lk,false)
+            #_parallel_sz_bfs_fss_new!(g,percolation_states,percolation_data,final_percolation_centrality,lk,false)
+            _random_path_non_unif_reduce!(sg,n, final_percolation_centrality[t],percolation_states,percolation_data,alpha_sampling,lk,false)
+        end
+    end
+    finish_time::Float64 = time()-start_time
+    @info("Completed in "*string(round(finish_time,digits = 4))) 
+    flush(stderr)
+    return reduce(+,final_percolation_centrality) .*[1/sample_size],sample_size,sample_size,finish_time,finish_time
+
+end
+
+
 function parallel_estimate_percolation_centrality_uniform(g,percolation_states::Array{Float64},sample_size::Int64,alpha_sampling::Float64 = 0.1)
     @assert nv(g) == lastindex(percolation_states) "Length of the percolation state array must be the same as the number of nodes"
     n::Int64 = nv(g)
@@ -1551,3 +1609,45 @@ end
 
 
 
+function _parallel_sz_bfs_bp_non_uni!(g,u::Int64,percolation_states::Array{Float64},percolation::Array{Float64})
+    n::Int64 = nv(g)
+    w::Int64 = -1
+    delta::Array{Float64} = zeros(Float64,n)
+    dist::Array{Int64} = zeros(Int64,n)
+    ball::Array{Int16} = zeros(Int16,n)
+    n_paths::Array{UInt128} = zeros(UInt128,n)
+    pred::Array{Array{Int64}} = Array{Array{Int64}}([[] for _ in 1:n])
+    q::Queue{Int64} = Queue{Int64}()
+    s::Stack{Int64} = Stack{Int64}()
+    
+    enqueue!(q,u)
+    dist[u] = 0
+    ball[u] = 1
+    n_paths[u] = 1
+    while length(q)!= 0
+        w = dequeue!(q)
+        for v in outneighbors(g,w)
+            if ball[v] == 0
+                dist[v] = dist[w]+1
+                ball[v] = 1
+                    enqueue!(q,v)
+                    push!(s,v)
+                end
+                if (ball[v] == 1 && dist[v] == dist[w]+1)
+                    n_paths[v] += n_paths[w]
+                    push!(pred[v],w)
+                end
+            end
+        end
+        while length(s)!= 0
+            w = pop!(s)
+            for p in pred[w]
+                delta[p] += n_paths[p]/n_paths[w] * (1+delta[w])
+            end
+            if w!= u
+                percolation[w] += delta[w]
+            end
+        end
+
+   return nothing
+end

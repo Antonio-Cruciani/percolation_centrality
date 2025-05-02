@@ -537,3 +537,63 @@ end
 
     return s, z
 end
+
+
+# X must be sorted in non increasing order
+function non_uniform_sampling_binary_search(X::Vector{Float64}, ℓ::Int)
+    @info "Computing d_v = max_{s,v} κ̃(s,v)"
+    n = length(X)
+    S = Vector{Tuple{Int, Int}}()
+    
+    # Initialize arrays
+    w = zeros(Float64, n + 1)
+    r = zeros(Float64, n + 1)
+    c_vals = zeros(Float64, n)
+    c_total = 0.0
+
+    # Precompute w, c, r arrays
+    for i in n:-1:1
+        w[i] = w[i + 1] + X[i]
+        c_i = (n - i + 1) * X[i] - w[i]
+        c_vals[i] = c_i
+        r[i] = r[i + 1] + c_i
+        c_total += c_i
+    end
+
+    # Sampling loop
+    for _ in 1:ℓ
+        # Sample s
+        a, b = 1, n
+        while a < b
+            d = (a + b) ÷ 2
+            k = (c_total - r[d + 1]) / c_total
+            u = rand()
+            if u ≤ k
+                b = d
+            else
+                a = d + 1
+            end
+        end
+        s = b
+
+        # Sample t
+        a, b = s, n
+        while a < b
+            d = (a + b) ÷ 2
+            numerator = (d - s + 1) * X[s] - w[s] + w[d + 1]
+            denominator = (n - s + 1) * X[s] - w[s]
+            k = denominator == 0 ? 1.0 : numerator / denominator
+            u = rand()
+            if u ≤ k
+                b = d
+            else
+                a = d + 1
+            end
+        end
+        t = b
+
+        push!(S, (s, t))
+    end
+
+    return S
+end

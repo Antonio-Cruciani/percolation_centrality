@@ -109,3 +109,53 @@ function save_graph(g,nn,sep::String = " ")
     end
     close(f)
 end
+
+
+function load_and_normalize_edgelist(path::String)
+    # Containers
+    edges = Tuple{String, String}[]
+    label_to_id = Dict{String, Int}()
+    id_to_label = String[]
+    
+    # Read file
+    open(path, "r") do file
+        for line in eachline(file)
+            if isempty(strip(line)) || startswith(line, "#")
+                continue  # skip comments and empty lines
+            end
+            tokens = split(strip(line))
+            if length(tokens) < 2
+                continue  # skip malformed lines
+            end
+            push!(edges, (tokens[1], tokens[2]))
+        end
+    end
+
+    # Map labels to consecutive IDs
+    next_id = 0
+    for (u, v) in edges
+        for node in (u, v)
+            if !haskey(label_to_id, node)
+                label_to_id[node] = next_id
+                push!(id_to_label, node)
+                next_id += 1
+            end
+        end
+    end
+
+    # Normalize edges
+    normalized_edges = [(label_to_id[u], label_to_id[v]) for (u, v) in edges]
+
+    return normalized_edges, label_to_id, id_to_label
+end
+
+
+function save_edge_list(el,nn,sep = " ")
+    mkpath("normalized/")
+    f = open("normalized/" * nn * ".txt", "w")
+    for e in el
+        write(f,string(e[1])*sep*string(e[2])*"\n")
+    end
+    close(f)
+
+end

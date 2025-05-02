@@ -19,7 +19,7 @@ mass = 4.0
 max_distance = typemax(Int64)
 
 #"07_large_twitch_edges.txt"
-datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
+datasets = ["07_large_twitch_edges.txt"]
 
 for ds in datasets
     gf = graphs_path*ds
@@ -36,7 +36,7 @@ for ds in datasets
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
 
-
+#=
 # Non uniform 
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_e_log"
@@ -59,7 +59,7 @@ for ds in datasets
 end
 
 #Uniform
-#=
+
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_e_log"
     gf = graphs_path*ds
@@ -76,7 +76,7 @@ for ds in datasets
 
 
 end
-=#
+
 
 
 datasets = ["15_cit_hepph.txt" ,"14_p2p_gnutella31.txt","11_soc_epinions.txt","12_soc_slashdot.txt","04_web_notredame.txt","06_web_google.txt"]
@@ -97,7 +97,6 @@ for ds in datasets
     save_results_new(ds_name,"exact_target_e_log",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
-
 # Non uniform 
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_e_log"
@@ -120,7 +119,7 @@ for ds in datasets
 
 
 end
-#=
+
 # Uniform
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_e_log"
@@ -138,10 +137,10 @@ for ds in datasets
 
 
 end
-=#
+
 
 # Non Uniform Sampling
-#=
+
 directed = false
 separator = "\t"
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt","07_large_twitch_edges.txt"]

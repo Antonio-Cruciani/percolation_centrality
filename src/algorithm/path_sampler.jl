@@ -938,6 +938,160 @@ function _random_path_non_unif!(sg::static_graph,n, percolation_centrality::Arra
 end
 
 
+function _random_path_non_unif_reduce!(sg::static_graph,n, percolation_centrality::Array{Float64},percolation_states::Array{Float64},percolation_data::Tuple{Float64,Dict{Int64,Float64}},alpha_sampling::Float64,lk::ReentrantLock,uniform_sampling::Bool)
+    
+    u::Int64 = sample(1:n)
+    v::Int64 = u
+    if !uniform_sampling
+        u,v = weighted_sample_kappa(percolation_states)
+    else
+        while (u == v)
+            v = sample(1:n)
+        end
+    end
+    if percolation_states[u] > percolation_states[v] 
+        # Variables for the visit
+        ball_indicator::Array{Int16} = zeros(Int16,n)
+        n_paths::Array{UInt128} = zeros(UInt128,n)
+        dist::Array{Int64} = zeros(Int64,n)
+        pred::Array{Array{Int64}} = [Array{Int64}([]) for _ in 1:n]
+        end_q = 2
+        #q[1] = u
+        #q[2] = v
+        tot_weight::UInt128 = 0
+        random_edge::UInt128 = 0
+        cur_edge::UInt128 = 0
+        ball_indicator[u] = @visited_s
+        ball_indicator[v] = @visited_z
+        n_paths[u] = 1
+        n_paths[v] = 1
+        dist[u] = 0
+        dist[v] = 0
+
+        sp_edges::Vector{Tuple{Int64, Int64}} = Vector{Tuple{Int64, Int64}}()
+        have_to_stop::Bool = false
+        start_u, end_u = 1, 2
+        start_v, end_v = 2, 3
+        vis_edges::Int64 = 0
+
+        sum_degs_u::Int64 = 0
+        sum_degs_v::Int64 = 0
+        degrees = sg.degrees_adj
+        q_s::Queue{Int64} = Queue{Int64}()
+        q_z::Queue{Int64} = Queue{Int64}()
+        enqueue!(q_s,u)
+        enqueue!(q_z,v)
+        to_expand::Int32 = @adjacency
+
+        while !have_to_stop
+            if sum_degs_u <= sum_degs_v
+                start_cur, end_cur = start_u, end_u
+                start_cur = 0
+                end_cur = length(q_s)
+                start_u = end_q
+                new_end_cur = Ref(end_u)
+                end_u = end_q
+                sum_degs_u = 0
+                sum_degs_cur = Ref(sum_degs_u)
+                degrees = sg.degrees_adj
+                adj = sg.adjacency
+                to_expand = @adjacency
+
+            else
+                start_cur, end_cur = start_v, end_v
+                start_cur = 0
+                end_cur = length(q_z)
+                start_v = end_q
+                new_end_cur = Ref(end_v)
+                end_v = end_q
+                sum_degs_v = 0
+                sum_degs_cur = Ref(sum_degs_v)
+                degrees = sg.degrees_idj
+                adj = sg.incidency
+                to_expand = @incidency
+
+            end
+
+            while start_cur < end_cur
+                #x = q[start_cur]
+                if to_expand == @adjacency
+                    x = dequeue!(q_s)
+                else
+                    x = dequeue!(q_z)
+                end
+                start_cur += 1
+                neigh_num = degrees[x]
+
+                for j in 1:neigh_num
+                    vis_edges += 1
+                    y = adj[x][j]
+                    if ball_indicator[y] == 0
+                        sum_degs_cur[] += degrees[y]
+                        n_paths[y] = n_paths[x]
+                        ball_indicator[y] = ball_indicator[x]
+                        if (to_expand == @adjacency)
+                            enqueue!(q_s,y)
+                        else
+                            enqueue!(q_z,y)
+                        end
+                        #q[end_q] = y
+                        end_q += 1
+                        new_end_cur[] += 1
+                        push!(pred[y],x)
+                        dist[y] = dist[x] + 1
+                    elseif ball_indicator[y] != ball_indicator[x]
+                        have_to_stop = true
+                        push!(sp_edges, (x, y))
+                    elseif dist[y] == dist[x] + 1
+                        n_paths[y] += n_paths[x]
+                        push!(pred[y],x)
+                    end
+                end
+            end
+
+            if sum_degs_cur[] == 0
+                have_to_stop = true
+            end
+        end
+
+        if length(sp_edges) != 0
+            #println("IT IS NOT 0")
+            tot_weight = sum(n_paths[x] * n_paths[y] for (x, y) in sp_edges)
+            random_edge = rand(0:tot_weight-1)
+            cur_edge = 0
+            path::Array{Int64} =Array{Int64}([])
+
+            for (x, y) in sp_edges
+                cur_edge += n_paths[x] * n_paths[y]
+                if cur_edge > random_edge
+                    ##println("CUR EDG ",cur_edge, " rnd edg ",random_edge, " x ",x," y ",y)
+                    #println("S ",u, " Z ",v)
+                    _backtrack_path!(u, v, x, path, n_paths, pred)
+                    _backtrack_path!(u, v, y, path, n_paths, pred)
+                    break
+                end
+            end
+
+            #for i in 1:end_q
+            #    ball_indicator[q[i]] = @unvisited
+            #end
+            #println(path)
+            #println("Number of path to backtrack is ",trunc(UInt128,floor(alpha_sampling * tot_weight)), " for thread ",(threadid()))
+    
+            for w in path
+                percolation_value = 1
+                
+                if uniform_sampling
+                    percolation_value =  (ramp(percolation_states[u],percolation_states[v])/percolation_data[1])  
+                end
+                percolation_centrality[w] += percolation_value
+            end
+               
+        end
+    end
+    return nothing
+end
+
 function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths::Array{UInt128},pred::Array{Array{Int64}})
     tot_weight::UInt128 = n_paths[w]
     random_pred::UInt128 = 0
@@ -969,5 +1123,7 @@ function _backtrack_path!(s::Int64,z::Int64,w::Int64,path::Array{Int64},n_paths:
         _backtrack_path!(s,z,v,path,n_paths,pred)
     end
 end
+
+
 
 

@@ -14,7 +14,7 @@ percolation_path = "percolation_states/"
 output_path = ""
 component_size = 50
 #,"07_large_twitch_edges.txt"
-datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
+datasets = ["07_large_twitch_edges.txt"]
 
 
 
@@ -35,7 +35,7 @@ for ds in datasets
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
 
-
+#=
 
 
 graphs_path = "components/"
@@ -53,15 +53,15 @@ for ds in datasets
             y = parallel_estimate_percolation_centrality_non_uniform(g,perc,sample_size)
             save_results_progressive_sampling(ds_name,"non_uniform",y[1],y[2],y[4],ss_save[i],0.0,y[5],output_path)
             #Uniform
-            h = parallel_estimate_percolation_centrality_uniform(g,perc,sample_size)
-            save_results_progressive_sampling(ds_name,"uniform",h[1],h[2],h[4],ss_save[i],0.0,h[5],output_path)
+            #h = parallel_estimate_percolation_centrality_uniform(g,perc,sample_size)
+            #save_results_progressive_sampling(ds_name,"uniform",h[1],h[2],h[4],ss_save[i],0.0,h[5],output_path)
         end
         i+=1
     end
 
 
 end
-#=
+
 # Uniform
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_lcc_in_"*string(component_size)
@@ -79,7 +79,7 @@ for ds in datasets
 
 
 end
-=#
+
 
 graphs_path = "graphs/"
 
@@ -127,7 +127,7 @@ for ds in datasets
 
 
 end
-#=
+
 # Uniform
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_lcc_in_"*string(component_size)

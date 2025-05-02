@@ -9,13 +9,13 @@ sample_size_list = [1000,5000,10000,50000,100000]
 ss_save = [1,2,3,4,5,6,7]
 delta = 0.05
 
-run = 5
+run = 10
 graphs_path = "graphs/"
 percolation_path = "percolation_states/"
 output_path = ""
 component_size = 50
 # ,"07_large_twitch_edges.txt"
-datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt", "03_ca_astroph.txt"]
+datasets = [ "07_large_twitch_edges.txt"]
 
 #datasets = ["00_hiv.txt"]
 
@@ -25,9 +25,13 @@ separator = "\t"
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
+    #h =g
     h,x = plant_random_initiators(g,component_size)
     ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
-    save_percolation_array(ds_name,x)
+    println(percolation_path*ds_name*".txt")
+    x = read_percolation(percolation_path*ds_name*".txt")
+
+    #save_percolation_array(ds_name,x)
     #save_graph(h,ds_name,separator)
     @info("Computing Ground Truth percolation centrality for "*ds_name)
     flush(stderr)
@@ -42,7 +46,7 @@ end
 #graphs_path = "components/"
 
 # Non uniform
-
+#=
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
     gf = graphs_path*ds
@@ -62,7 +66,7 @@ for ds in datasets
 
 
 end
-#=
+
 # Uniform
 for ds in datasets
     ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
@@ -80,7 +84,6 @@ for ds in datasets
 
 
 end
-=#
 
 #graphs_path = "graphs/"
 
@@ -128,6 +131,8 @@ for ds in datasets
 
 
 end
+=#
+
 #=
 # Uniform
 for ds in datasets

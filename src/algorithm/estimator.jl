@@ -27,29 +27,7 @@
         right_sum = (prefix_sum[end] - prefix_sum[i]) - (n - i) * sorted_X[i]
         Y[sorted_indices[i]] = left_sum + right_sum
     end
-    #=
-    # Extract keys and values from the sorted dictionary
-    keys_sorted = collect(keys(X))
-    values_sorted = collect(values(X))
-
-    Y = Dict{Int, Float64}()
-
-    # Prefix sum of values
-    prefix_sum = zeros(Float64, n)
-    prefix_sum[1] = values_sorted[1]
-    for i in 2:n
-        prefix_sum[i] = prefix_sum[i - 1] + values_sorted[i]
-    end
-
-    total_sum = prefix_sum[n]
-
-    for i in 1:n
-        # Sum of differences for values_sorted[i]
-        diff_sum = values_sorted[i] * (i - 1) - (i > 1 ? prefix_sum[i - 1] : 0)
-        diff_sum += (total_sum - prefix_sum[i]) - values_sorted[i] * (n - i)
-        Y[keys_sorted[i]] = diff_sum
-    end
-    =#
+   
     for v in 1:n
         d[v] += Y[v]/percolation_data[2][v]
         if Y[v]/percolation_data[2][v] < 0 
@@ -67,6 +45,7 @@
     @info("minimum d_v = "*string(minimum(filtered_d))*" maximum d_v = "*string(maximum(filtered_d))*" computed in "*string(end_time)*" seconds")
     return filtered_d,end_time,Y,percolation_data
 end
+
 
 
 
