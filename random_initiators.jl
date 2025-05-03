@@ -15,7 +15,7 @@ percolation_path = "percolation_states/"
 output_path = ""
 component_size = 50
 # ,"07_large_twitch_edges.txt"
-datasets = [ "07_large_twitch_edges.txt"]
+datasets = [ "10_flickr.txt"]
 
 #datasets = ["00_hiv.txt"]
 
@@ -41,6 +41,30 @@ for ds in datasets
 end
 
 
+datasets = [ "08_web_berkstan.txt","13_soc_pokec.txt"]
+
+#datasets = ["00_hiv.txt"]
+
+directed = true
+separator = "\t"
+
+for ds in datasets
+    gf = graphs_path*ds
+    g = load_graph(gf,directed,separator)
+    #h =g
+    h,x = plant_random_initiators(g,component_size)
+    ds_name = string(split(ds,".txt")[1])*"_rnd_init_"*string(component_size)
+    println(percolation_path*ds_name*".txt")
+    #x = read_percolation(percolation_path*ds_name*".txt")
+
+    save_percolation_array(ds_name,x)
+    #save_graph(h,ds_name,separator)
+    @info("Computing Ground Truth percolation centrality for "*ds_name)
+    flush(stderr)
+    y = parallel_percolation_centrality_new_target(h,x)
+    save_results_new(ds_name,"exact_target",y[1],y[6],y[5])
+    #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
+end
 
 
 #graphs_path = "components/"

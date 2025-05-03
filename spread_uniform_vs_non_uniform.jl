@@ -19,7 +19,7 @@ mass = 4.0
 max_distance = typemax(Int64)
 
 #"07_large_twitch_edges.txt"
-datasets = ["07_large_twitch_edges.txt"]
+datasets = ["10_flickr.txt"]
 
 for ds in datasets
     gf = graphs_path*ds
@@ -36,6 +36,23 @@ for ds in datasets
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
 
+directed = true
+
+datasets = [ "08_web_berkstan.txt","13_soc_pokec.txt"]
+for ds in datasets
+    gf = graphs_path*ds
+    g = load_graph(gf,directed,separator)
+    k  = trunc(Int64,ceil(log(nv(g))))
+    @info("Simulating spreading from "*string(k)*"/"*string(nv(g))*" random nodes")
+    x = simulate_spreading(g,k,max_distance,mass)
+    ds_name = string(split(ds,".txt")[1])*"_e_log"
+    save_percolation_array(ds_name,x)
+    @info("Computing Ground Truth percolation centrality for "*ds_name)
+    flush(stderr)
+    y = parallel_percolation_centrality_new_target(g,x)
+    save_results_new(ds_name,"exact_target_e_log",y[1],y[6],y[5])
+    #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
+end
 #=
 # Non uniform 
 for ds in datasets
