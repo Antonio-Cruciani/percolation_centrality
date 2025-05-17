@@ -19,7 +19,9 @@ mass = 4.0
 max_distance = typemax(Int64)
 
 #"07_large_twitch_edges.txt"
+#=
 datasets = ["10_flickr.txt"]
+
 
 for ds in datasets
     gf = graphs_path*ds
@@ -35,10 +37,11 @@ for ds in datasets
     save_results_new(ds_name,"exact_target_e_log",y[1],y[6],y[5])
     #save_results(ds_name,"exact_target_unnormalized",x[2],x[3])
 end
+=#
 
 directed = true
 
-datasets = [ "08_web_berkstan.txt","13_soc_pokec.txt"]
+datasets = ["14_p2p_gnutella31.txt"]
 for ds in datasets
     gf = graphs_path*ds
     g = load_graph(gf,directed,separator)
