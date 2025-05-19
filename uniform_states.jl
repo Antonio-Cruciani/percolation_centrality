@@ -13,7 +13,7 @@ output_path = ""
 directed = false
 separator = "\t"
 # Generating all the percolation states
-
+#=
 #"07_large_twitch_edges.txt"
 datasets = ["01_musae_facebook_edges.txt","02_email_enron.txt","03_ca_astroph.txt"]
 
@@ -44,13 +44,13 @@ end
 
 
 # Computing GT for bigger graphs
+=#
 
-
-directed = false
+directed = true
 separator = "\t"
 # Generating all the percolation states
 
-datasets = ["07_large_twitch_edges.txt"]
+datasets = ["08_web_berkstan.txt"]
 
 for ds in datasets
     gf = graphs_path*ds
