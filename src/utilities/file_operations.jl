@@ -1,4 +1,4 @@
-function save_percolation_array(nn::String,x::Array{Float64})
+function save_percolation_array(nn,x::Array{Float64})
     mkpath("percolation_states/")
     f::IOStream = open("percolation_states/" * nn *".txt", "w")
     for u in 1:lastindex(x)

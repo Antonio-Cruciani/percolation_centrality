@@ -297,3 +297,21 @@ function parallel_percolation_centrality_new_target(g,percolation_states::Array{
     flush(stderr)
     return final_percolation,unnormalized_scores,percolation_data[1],dv,max_d_v,finish_time
 end
+
+
+function normalize_to_percolation(pc::Array{Float64},percolation_states::Array{Float64})::Array{Float64}
+    n::Int64 = lastindex(pc)
+    dv,_,_,_=compute_d_max(n ,percolation_states)
+    max_d_v::Float64 = maximum(dv)
+    @info("Max d_v $max_d_v")
+    tmp_perc_states::Dict{Int64,Float64} = Dict(v => percolation_states[v] for v in 1:n)
+    sorted_dict = OrderedDict(sort(collect(tmp_perc_states), by = kv -> kv[2]))
+    percolation_data::Tuple{Float64,Dict{Int64,Float64}} = percolation_differences(sorted_dict,n)
+    normalized::Array{Float64} = zeros(Float64,lastindex(pc))
+    @info("Normalizing")
+    for u in 1:lastindex(pc)
+        normalized[u] = pc[u] * percolation_data[1]/percolation_data[2][u]
+    end
+    return normalized
+
+end

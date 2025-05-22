@@ -150,6 +150,59 @@ function load_and_normalize_edgelist(path::String)
 end
 
 
+function load_and_normalize_edgelist_percolation_states(path::String,path_percs::String)
+    # Containers
+    edges = Tuple{String, String}[]
+    label_to_id = Dict{String, Int}()
+    id_to_label = String[]
+    
+    # Read file
+    open(path, "r") do file
+        for line in eachline(file)
+            if isempty(strip(line)) || startswith(line, "#")
+                continue  # skip comments and empty lines
+            end
+            tokens = split(strip(line))
+            if length(tokens) < 2
+                continue  # skip malformed lines
+            end
+            push!(edges, (tokens[1], tokens[2]))
+        end
+    end
+
+    # Map labels to consecutive IDs
+    next_id = 0
+    for (u, v) in edges
+        for node in (u, v)
+            if !haskey(label_to_id, node)
+                label_to_id[node] = next_id
+                push!(id_to_label, node)
+                next_id += 1
+            end
+        end
+    end
+
+    # Normalize edges
+    normalized_edges = [(label_to_id[u], label_to_id[v]) for (u, v) in edges]
+
+    normalized_states::Array{Float64} = zeros(Float64,next_id)
+    # Read file
+    open(path_percs, "r") do file
+        for line in eachline(file)
+            if isempty(strip(line)) || startswith(line, "#")
+                continue  # skip comments and empty lines
+            end
+            tokens = split(strip(line))
+            if length(tokens) < 2
+                continue  # skip malformed lines
+            end
+            normalized_states[label_to_id[tokens[1]]+1] = parse(Float64,tokens[2])
+        end
+    end
+
+    return normalized_edges,normalized_states ,label_to_id, id_to_label
+end
+
 function save_edge_list(el,nn,sep = " ")
     mkpath("normalized/")
     f = open("normalized/" * nn * ".txt", "w")
