@@ -17,8 +17,9 @@ percolation_path = "percolation_states/"
 output_path = ""
 component_size = 50
 #,"07_large_twitch_edges.txt"
-datasets = ["21_brexit.txt","23_twitter_pol.txt","20_abortion.txt","24_uselections.txt","22_obamacare.txt"]
-
+datasets = [
+"youtube_10000_edges.txt" 
+]
 
 directed = false
 separator = " "

@@ -191,7 +191,9 @@ function attach_gadget_to_biggest_component_in(g,k::Int64)
         add_vertices!(g, 1)
     end
     #add_edge!(g,u,n+1)
-    add_edge!(g,u,n+1)
+    if is_directed(g)
+        add_edge!(g,u,n+1)
+    end
 
     for i in n+2:n+k
         add_edge!(g,i,i-1)
